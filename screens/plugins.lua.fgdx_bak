@@ -186,7 +186,7 @@ local function build_launch_list()
         colour  = (ci and ci.colour) or p.colour or PUR,
         icon    = (ci and ci.icon) or p.icon or "plug",
         screen  = p.key,
-        is_new = false,
+        is_new  = (ci and ci.new) or false,
       }
     end
   end
@@ -235,7 +235,7 @@ local function build_store_list()
         screen       = p.key,
         needs_perm   = p.needs_perm == true,
         manage_key   = p.manage_key,
-        is_new = false,
+        is_new       = (ci and ci.new) or false,
         raw          = ci,
       }
       seen[p.key] = true
@@ -273,7 +273,7 @@ local function build_store_list()
         disabled     = disabled,
         screen       = pl.open_screen,
         needs_perm   = false,
-        is_new = false,
+        is_new       = pl.new or false,
         info_only    = INFO_ONLY[pl.id] == true,
         raw          = pl,
       }
@@ -450,19 +450,10 @@ local function du_kb(path)
   return v * 1024
 end
 
--- FGDX: solo queste 4 app SPDW in MUOS TOOLS
-local TOOLS_WHITELIST = {
-  voiddesk  = true,
-  tailscale = true,
-  bgm       = true,
-  dolphin   = true,
-}
-
 local function build_tools_list()
   local out, seen = {}, {}
-  -- catalog apps (SOLO whitelist SPDW)
+  -- catalog apps
   for _, app in ipairs(Cat.all_apps()) do
-    if TOOLS_WHITELIST[app.key] then
     local installed = false
     if app.install_path and app.install_path ~= "" then
       installed = sh.exists(app.install_path)
@@ -485,14 +476,12 @@ local function build_tools_list()
       source       = "catalog",
       installed    = installed,
       date_added   = app.date_added,
-      is_new = false,
+      is_new       = app.new or false,
       raw          = app,
     }
     seen[app.key] = true
-    end
   end
-  -- installed apps on SD cards (DISABLED: mostra solo SPDW)
-  if false then
+  -- installed apps on SD cards
   for _, root in ipairs(TOOLS_ROOTS) do
     if sh.is_dir(root.path) then
       local h = io.popen("ls -1d " .. sh.shq(root.path) .. "/*/ 2>/dev/null")
@@ -526,7 +515,6 @@ local function build_tools_list()
       end
     end
   end
-    end -- FGDX: chiude if false
   table.sort(out, function(a, b)
     if a.installed ~= b.installed then return a.installed end
     return (a.name or ""):lower() < (b.name or ""):lower()

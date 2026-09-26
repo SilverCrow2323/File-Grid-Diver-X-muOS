@@ -201,30 +201,15 @@ end
 -- ============================================================
 function M.play_fullscreen(path)
   if not M.available() then return false, "mpv not installed" end
+  -- Kill any daemon first
   M.stop_daemon()
 
-  -- FGDX FIX: flag aggiunti per forzare apertura finestra su muOS/SDL
-  --   --ontop               : mette mpv sopra LÖVE
-  --   --fullscreen          : fullscreen forzato
-  --   --no-input-default-bindings : il pad resta a LÖVE
-  --   --force-window=yes    : apre la finestra anche per audio-only
-  --   --stop-screensaver=no : evita interferenze con muOS OSD
-  local args = "--vo=sdl --ao=alsa --hwdec=v4l2request "
-    .. "--profile=fast "
-    .. "--no-osc --no-osd-bar --ontop --fullscreen "
-    .. "--no-input-default-bindings --force-window=yes "
-    .. "--stop-screensaver=no "
+  local args = "--vo=sdl --ao=alsa --hwdec=v4l2request " ..
+    "--profile=fast --no-osc --no-osd-bar --term-status-msg= "
 
-  -- Log su file per debug (no /dev/null)
-  local log = "/tmp/fgd_mpv_play.log"
-  local cmd = "mpv " .. args .. sh.shq(path)
-    .. " > " .. sh.shq(log) .. " 2>&1"
+  local cmd = "mpv " .. args .. sh.shq(path) .. " >/dev/null 2>&1"
   local rc = sh.exec(cmd)
-
-  if rc ~= 0 then
-    return false, "mpv exit " .. tostring(rc) .. " (log: " .. log .. ")"
-  end
-  return true
+  return rc == 0
 end
 
 -- ============================================================

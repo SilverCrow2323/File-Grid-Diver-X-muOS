@@ -37,7 +37,7 @@ end
 function M.kind_label(kind)
   local labels = {
     zip="ZIP", targz="TAR.GZ", tarbz2="TAR.BZ2", tarxz="TAR.XZ",
-    tar="TAR", ["7z"]="7-ZIP", gz="GZIP", rar="RAR",
+    tar="TAR", ["7z"]="7-ZIP", gz="GZIP", rar="RAR", rar="RAR", rar="RAR", rar="RAR",
   }
   return labels[kind] or (kind or "?")
 end

@@ -9,7 +9,7 @@ function M.trigger(cb)
   if ok then
     SFX.play("finalbout")               -- short sting, fires together
     if SFX.play_bgm then
-      SFX.play_bgm("fb/fbbgm0", 0.85)
+      SFX.play_bgm("finalbout_griddev", 0.85)
     end
   end
 end

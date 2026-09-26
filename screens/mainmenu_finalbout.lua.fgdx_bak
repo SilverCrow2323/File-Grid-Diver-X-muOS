@@ -136,10 +136,6 @@ end
 
 -- Sfondo blu profondo con alone
 local function draw_bg()
-  do
-    local ok, FBBG = pcall(require, "ui.fb_background")
-    if ok and FBBG.draw("mainmenu") then return end
-  end
   D.bg()
   col({0.02, 0.02, 0.10}, 1)
   love.graphics.rectangle("fill", 0, 0, W, H)

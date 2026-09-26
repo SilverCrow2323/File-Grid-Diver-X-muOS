@@ -646,6 +646,7 @@ local function draw_epub()
   local y = y_top
   local th = State.theme
   local theme = THEMES[reader_theme] or THEMES.dark
+  local theme = THEMES[reader_theme] or THEMES.dark
 
   local function font_for(kind)
     if kind == "h1" then return A.font(A.FONT_TITLE, 20), 28

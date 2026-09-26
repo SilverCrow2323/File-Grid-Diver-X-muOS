@@ -203,20 +203,6 @@ local function draw_progress()
 end
 
 function S.draw()
-  do
-    local ok, FBBG = pcall(require, "ui.fb_background")
-    if ok and FBBG.draw("startup") then
-      local t = love.timer.getTime()
-      local a = 0.6 + 0.4 * math.sin(t * 3)
-      love.graphics.setColor(1, 0.9, 0.3, a)
-      love.graphics.setFont(A.font(A.FONT_TITLE, 28))
-      love.graphics.printf("PRESS START", 0, 380, W, "center")
-      love.graphics.setColor(1, 1, 1, 1)
-      D.scanlines(W, H, 0.10)
-      D.vignette(W, H, 0.65)
-      return
-    end
-  end
   draw_bg()
 
   local th = State.theme

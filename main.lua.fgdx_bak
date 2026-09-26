@@ -70,7 +70,6 @@ local SCREENS = {
   office_rt     = require("screens.office_rt"),
   audio_player  = require("screens.audio_player"),
   video_player  = require("screens.video_player"),
-  about_fb      = require("screens.about_fb"),
 }
 
 -- Plugins: dynamic screens registered by the loader
@@ -114,9 +113,6 @@ local DEBUG_MAX      = 14
 
 local HUBS = { mainmenu=true, boot=true, plugins=true,
                settings=true, storage=true, filex_home=true }
-
--- FGDX FIX: era usata come globale
-local catalog_poll_t = 0
 
 -- ------------------------------------------------------------
 -- 3. Structured logging with rotation
@@ -725,6 +721,7 @@ function love.load()
     if Cat.check_app_version_async then
       Cat.check_app_version_async(State.app_version)
     end
+    catalog_poll_t = 0
   end
 end
 

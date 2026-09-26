@@ -24,9 +24,6 @@ local GRN    = {0.35, 0.90, 0.50}
 local RED    = {0.95, 0.35, 0.30}
 local CYA_HI = {0.60, 0.95, 1.00}
 
--- FGDX FIX: forward decl (era globale in poll_scan)
-local lib_sel, lib_scroll, lib_filter = 1, 0, 1
-
 local function col(c, a) love.graphics.setColor(c[1], c[2], c[3], a or 1) end
 local function human(n)
   if not n or n <= 0 then return "0 B" end
@@ -236,6 +233,7 @@ end
 local TABS = { "PLAYER", "LIBRARY", "SETTINGS" }
 local NTAB = 3
 local tab = 1
+local lib_sel, lib_scroll, lib_filter = 1, 0, 1
 local FILTERS = { "ALL", "AUDIO", "VIDEO" }
 local cfg_sel = 1
 local cfg_paths_mode = false

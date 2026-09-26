@@ -212,10 +212,6 @@ local TABS = {
     local r = {}
     r[#r+1] = act("About File-GD X", "versione, crediti, licenza",
       function() State.go("about") end)
-    if State.fb_view_used then
-      r[#r+1] = act("About Final Bout", "easter egg tribute + credits",
-        function() State.go("about_fb") end)
-    end
     r[#r+1] = act("Key guide", "tutti i binding in un posto",
       function() State.go("help") end)
     r[#r+1] = act("Open log viewer", "log runtime e sessione",
@@ -782,10 +778,6 @@ end
 --  Main draw
 -- ============================================================
 function S.draw()
-  do
-    local ok, FBBG = pcall(require, "ui.fb_background")
-    if ok then FBBG.draw("settings", 0.35) end
-  end
   D.bg()
 
   local tab = TABS[cur_tab]
