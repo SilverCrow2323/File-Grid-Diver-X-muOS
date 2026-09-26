@@ -1,0 +1,69 @@
+# ============================================================
+#  File-Grid-Diver X -- .gitignore
+# ============================================================
+
+# Cartelle locali / non GitHub
+_NOT_FOR_GITHUB/
+.desktopbase/
+_FGDX_*/
+_backup_*/
+backups/
+duplicates/
+misc/
+
+# Runtime data
+data/logs/
+data/trash/
+data/downloads/
+data/snapshots/
+data/plugin_logs/
+data/inputinvestigation/
+data/pdf_pack/
+data/fgdx-addons/*.muxapp
+
+# File runtime generati
+data/fgd.json
+data/fgd_runtime.log
+data/fgd_error.log
+data/plugin_perms.json
+data/plugin_decided.json
+data/plugin_disabled.json
+data/catalog.cache.json
+data/catalog.status
+data/catalog_refresh.sh
+data/bookmarks.json
+data/comic_bookmarks.json
+data/chou_henka_config.json
+data/chou_henka_library.json
+data/update_check.*
+data/*.tmp
+
+# Release / pacchetti grandi
+releases/
+*.muxapp
+*.muxzip
+*.muxupd
+*.muxthm
+
+# Backup / temporanei
+*.bak
+*.bak_*
+*.tmp
+*.orig
+*.rej
+*.old
+*.broken
+*.fgd.bak
+*.log
+
+# Librerie native / wheel pesanti
+lib/aarch64/
+vendor/pymupdf/*.whl
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db

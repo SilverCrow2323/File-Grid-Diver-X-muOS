@@ -1,0 +1,16 @@
+return {
+  name     = "Web View",
+  key      = "web_view",
+  category = "Extensions",
+  version  = "1.0.0",
+  author   = "sirpips",
+  desc     = "true HTML rendering via built-in Lua parser (no download)",
+  icon     = "web",
+  colour   = {0.30, 0.85, 0.95},
+  entry    = "main",
+  priority = 30,
+  extender = true,
+  builtin  = true,
+  extensions = { "html", "htm" },
+  permissions = { "filesystem.read" },
+}

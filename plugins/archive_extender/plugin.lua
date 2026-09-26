@@ -1,0 +1,15 @@
+return {
+  name     = "Archive Extender",
+  key      = "archive_extender",
+  category = "Extensions",
+  version  = "1.0.0",
+  author   = "sirpips",
+  desc     = "unlock RAR, ISO, IMG, 7z, TAR.ZST via 7z and unrar",
+  icon     = "archive",
+  colour   = {0.60, 0.50, 0.80},
+  entry    = "main",
+  priority = 10,
+  extender = true,
+  extensions = { "rar", "cbr", "cb7", "cbt", "iso", "img", "tar.zst", "tar.lz4" },
+  permissions = { "shell.exec", "filesystem.read", "filesystem.write" },
+}

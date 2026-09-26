@@ -1,0 +1,597 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-09-25",
+  "raw_url": "https://raw.githubusercontent.com/SilverCrow2323/File-Grid-Diver-X-muOS/main/data/catalog.json",
+  "announcements": [
+    {
+      "text": "Minoru's Store v1.0 -- 14 plugins available",
+      "colour": [
+        0.7,
+        0.55,
+        0.92
+      ]
+    },
+    {
+      "text": "Save Backup and Screenshot Gallery are ready",
+      "colour": [
+        0.35,
+        0.9,
+        0.5
+      ]
+    },
+    {
+      "text": "Video Clipper, RetroArch Config, EPUB Pro",
+      "colour": [
+        0.3,
+        0.85,
+        0.95
+      ]
+    }
+  ],
+  "plugins": [
+    {
+      "id": "pdf_support",
+      "name": "PDF Support",
+      "tagline": "Render PDF files in GD-X Library",
+      "description": "Full PDF rendering inside GD-X Library. Adds page navigation, zoom, pan and page jump for any .pdf file. Runs MuPDF via the Python binding PyMuPDF, downloaded once and stored locally.",
+      "features": [
+        "Page navigation with L1 / R1",
+        "Zoom in / out with L2 / R2",
+        "Pan with D-pad when zoomed",
+        "Jump to page with A",
+        "Renderer: MuPDF 1.25 (fast on aarch64)"
+      ],
+      "usage": "Open any .pdf from File Explorer",
+      "version": "1.25.4",
+      "author": "sirpips",
+      "source": "PyPI / pymupdf",
+      "license": "AGPL-3.0",
+      "icon": "pdf",
+      "colour": [
+        0.7,
+        0.55,
+        0.92
+      ],
+      "dependencies": [
+        "python3",
+        "pip"
+      ],
+      "builtin": false,
+      "wheel_url": "https://files.pythonhosted.org/packages/41/2f/7ca622fff06e879fd4adcde8b1bdbe9989ff2f36fc0607481581f4a3caa1/pymupdf-1.25.4-cp39-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+      "wheel_name": "pymupdf-1.25.4-cp39-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+      "wheel_size": 19464372,
+      "pack_dir": "data/downloads",
+      "pkg_name": "pymupdf",
+      "installed_check": "python3 -c 'import pymupdf; print(\"ok\")' 2>&1",
+      "date_added": "2026-09-20",
+      "new": false,
+      "documentation": "PDF Support installs PyMuPDF (a Python binding for MuPDF) the first time you open a PDF file from GD-X Library.\n\nThe download is 19 MB and is stored in data/downloads/. After installation, all future PDFs open instantly with page navigation, zoom and pan.\n\nIf PyMuPDF is not installed and you try to open a PDF, GD-X Library shows a message and offers to install it through FGD-X Plugins.\n\nTo remove, press Y in this screen.",
+      "category": "documents"
+    },
+    {
+      "id": "archive_extender",
+      "name": "Archive Extender",
+      "tagline": "RAR, ISO, IMG, 7z, TAR.ZST support",
+      "description": "Unlocks additional archive formats using tools already present on muOS. RAR / CBR via unrar. ISO / IMG / DMG / 7z / TAR.ZST via 7z.",
+      "features": [
+        "RAR and CBR archives (comics) via unrar",
+        "ISO, IMG, DMG disc images via 7z",
+        "7z archives with full folder tree",
+        "TAR.ZST and TAR.LZ4 compressed tarballs",
+        "Integrated with Archive Rt viewer"
+      ],
+      "usage": "Open .rar / .iso / .img from File Explorer",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "system tools",
+      "license": "system",
+      "icon": "archive",
+      "colour": [
+        0.6,
+        0.5,
+        0.8
+      ],
+      "dependencies": [
+        "7z",
+        "unrar"
+      ],
+      "builtin": true,
+      "installed_check": "command -v 7z >/dev/null && command -v unrar >/dev/null && echo ok || echo no",
+      "date_added": "2026-09-18",
+      "new": false,
+      "documentation": "Archive Extender unlocks additional archive formats using the 7z and unrar binaries already present on muOS.\n\nSupported formats added:\n- RAR archives and CBR comics via unrar\n- ISO, IMG and DMG disc images via 7z\n- 7z, CB7 and CBT archives\n- TAR.ZST and TAR.LZ4 compressed tarballs\n\nAll extraction is handled through Archive Rt (the archive viewer). No download required. This plugin is enabled by default.",
+      "category": "files"
+    },
+    {
+      "id": "office_reader",
+      "name": "Office Reader",
+      "tagline": "View DOCX, XLSX, PPTX files",
+      "description": "Opens Microsoft Office documents in Office:Rt. DOCX and PPTX show text with paragraphs and slide breaks. XLSX shows the first sheet as a table. Uses unzip + a small XML parser.",
+      "features": [
+        "DOCX: text with paragraph breaks",
+        "XLSX: first sheet as a scrollable table",
+        "PPTX: per-slide text extraction",
+        "Native unzip (no extra tools to install)",
+        "Instant open, no conversion step"
+      ],
+      "usage": "Open .docx / .xlsx / .pptx from File Explorer",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "built-in XML parser",
+      "license": "GPL-3.0",
+      "icon": "office",
+      "colour": [
+        0.95,
+        0.7,
+        0.3
+      ],
+      "dependencies": [
+        "unzip"
+      ],
+      "builtin": true,
+      "installed_check": "command -v unzip >/dev/null && echo ok || echo no",
+      "date_added": "2026-09-18",
+      "new": false,
+      "documentation": "Office Reader opens Microsoft Office documents inside Office:Rt.\n\nSupported formats:\n- DOCX: paragraphs, headings, lists and slide breaks preserved as text\n- XLSX: the first sheet is shown as a scrollable table\n- PPTX: text extraction per slide\n\nThe plugin uses unzip (already present on muOS) plus a small XML parser written in pure Lua. No conversion step, no download, instant open.\n\nNote: styling, images and complex tables are not rendered. This is a text-first reader.",
+      "category": "documents"
+    },
+    {
+      "id": "web_view",
+      "name": "Web View",
+      "tagline": "True HTML rendering (Net-Sphere Reader)",
+      "description": "Browse and render local HTML files with the built-in Net-Sphere Reader engine. Real formatted content, not source code: headings, paragraphs, lists, bold, italic, images and horizontal rules.",
+      "features": [
+        "Scans Documents, Downloads, Books folders",
+        "Rendering via Net-Sphere Reader",
+        "Tags: h1-h6, p, br, ul, ol, li, b, i, a, img",
+        "Rendered / source view toggle with X",
+        "Document outline with Y",
+        "Previous / next file with L1 / R1"
+      ],
+      "usage": "Open .html / .htm from File Explorer",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "Net-Sphere Reader",
+      "license": "GPL-3.0",
+      "icon": "web",
+      "colour": [
+        0.3,
+        0.85,
+        0.95
+      ],
+      "dependencies": [
+        "built-in engine"
+      ],
+      "builtin": true,
+      "open_screen": "web_browser",
+      "installed_check": "echo ok",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "Web View renders local HTML files through Net-Sphere Reader, the built-in engine of File-GD X.\n\nWhere it scans:\n- Documents\n- Downloads\n- Books\nOn both SD cards and the home folder.\n\nWhat it renders:\n- Headings h1 to h6\n- Paragraphs, line breaks, horizontal rules\n- Lists (ul, ol, li)\n- Inline bold, italic, underline, strikethrough\n- Links, images, preformatted text, blockquotes\n\nNot a browser: CSS and JavaScript are ignored. Perfect for saved articles, documentation and offline pages.\n\nPress X to toggle between rendered view and source code view. Press Y for the document outline.",
+      "category": "web"
+    },
+    {
+      "id": "chou_henka",
+      "name": "Chou Henka",
+      "tagline": "Rich media player: audio, video, playlists, EQ",
+      "description": "Full-featured media player. Audio: playlist, queue, 6 EQ presets, seek, volume, speed and a 32-band animated visualizer. Video: launches mpv fullscreen with hardware decode.",
+      "features": [
+        "Audio playback via mpv daemon",
+        "Playlist / queue with prev / next",
+        "6 EQ presets: flat bass vocal rock jazz electro",
+        "32-band visualizer with bass-heavy spectrum",
+        "Video: fullscreen with hw decode",
+        "Metadata from ffprobe (title, artist, album)"
+      ],
+      "usage": "Open audio / video from File Explorer",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "mpv / ffprobe / python3",
+      "license": "system",
+      "icon": "media",
+      "colour": [
+        0.95,
+        0.4,
+        0.85
+      ],
+      "dependencies": [
+        "mpv",
+        "ffprobe",
+        "python3"
+      ],
+      "builtin": true,
+      "open_screen": "chou_henka",
+      "installed_check": "command -v mpv >/dev/null && command -v python3 >/dev/null && command -v ffprobe >/dev/null && echo ok || echo no",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "Chou Henka is a full-featured media player for audio and video.\n\nAudio mode:\n- Playlist and queue management\n- Prev / Next with L1 / R1\n- Play / Pause with A\n- Seek \u00b110s with D-pad left/right\n- Volume up/down with D-pad up/down\n- 6 equalizer presets: flat, bass, vocal, rock, jazz, electro\n- 32-band animated visualizer\n\nVideo mode:\n- Launches mpv fullscreen with hardware decode (v4l2request)\n- H.264 up to 1080p60 on the Allwinner H700\n- HEVC 8-bit partial hardware support\n\nMetadata is read from ffprobe: title, artist, album, bitrate, duration.",
+      "category": "media"
+    },
+    {
+      "id": "comic_reader",
+      "name": "Comic Reader+",
+      "tagline": "Manga and comics: page turning, RTL",
+      "description": "Specialised reader for CBZ, CBR, CB7 and CBT comics. Adds manga mode (right-to-left page order), double-page spreads, page transitions and a bookmark list.",
+      "features": [
+        "CBZ / CBR / CB7 / CBT support",
+        "Manga mode (right-to-left page order)",
+        "Double-page spread on landscape",
+        "Bookmarks per comic (resume reading)",
+        "Smooth page transitions"
+      ],
+      "usage": "Open .cbz / .cbr from File Explorer",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "built-in reader",
+      "license": "GPL-3.0",
+      "icon": "comic",
+      "colour": [
+        0.95,
+        0.75,
+        0.35
+      ],
+      "dependencies": [
+        "unzip"
+      ],
+      "builtin": true,
+      "open_screen": "comic_reader",
+      "installed_check": "command -v unzip >/dev/null && echo ok || echo no",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "Comic Reader+ is a specialised reader for CBZ, CBR, CB7 and CBT comics.\n\nControls:\n- L1 / R1: previous / next page\n- A: skip forward\n- X: toggle manga mode (right-to-left page order)\n- Y: toggle double-page spread\n- START: bookmark current page\n- L2 / R2: zoom\n\nBookmarks are stored per file in data/comic_bookmarks.json. Next time you open the same comic, it resumes from your bookmark.\n\nIn manga mode, left and right arrows are swapped so navigation feels natural for Japanese reading order.",
+      "category": "documents"
+    },
+    {
+      "id": "font_preview",
+      "name": "Font Preview",
+      "tagline": "Browse TTF, OTF and WOFF fonts",
+      "description": "Preview any TrueType or OpenType font installed on the device. Shows a sample alphabet, numbers, punctuation and a pangram at multiple sizes.",
+      "features": [
+        "TTF, OTF, WOFF, WOFF2 support",
+        "Multi-size preview: 12, 18, 24, 36 px",
+        "Full alphabet + digits + punctuation",
+        "Pangram sample for quick judgement",
+        "Loads fonts directly with LOVE"
+      ],
+      "usage": "Open .ttf / .otf from File Explorer",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "LOVE newFont",
+      "license": "GPL-3.0",
+      "icon": "font",
+      "colour": [
+        0.85,
+        0.7,
+        1.0
+      ],
+      "dependencies": [
+        "built-in engine"
+      ],
+      "builtin": true,
+      "open_screen": "font_preview",
+      "installed_check": "echo ok",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "Font Preview loads any TrueType or OpenType font and shows it at four different sizes.\n\nFor each size (12, 18, 24, 36 px) you see:\n- The uppercase alphabet A to Z\n- The lowercase alphabet a to z\n- Digits and punctuation 0-9 !?@#$%&*()-_=+\n- A pangram: \"The quick brown fox jumps over the lazy dog\"\n\nSupported formats: TTF, OTF, WOFF and WOFF2.\n\nOpen any font file from File Explorer to see the preview. Use up/down to scroll through the sizes.",
+      "category": "files"
+    },
+    {
+      "id": "hex_viewer",
+      "name": "Hex Viewer",
+      "tagline": "Read-only hexadecimal view of any file",
+      "description": "Inspect any file at the byte level. Classic 16-bytes-per-row layout with ASCII sidebar. Read-only by design: no editing, no accidental writes.",
+      "features": [
+        "16 bytes per row with ASCII sidebar",
+        "Offsets in hexadecimal and decimal",
+        "Jump to top / bottom with Y / X",
+        "Page navigation with L1 / R1",
+        "Works on any file, binary or text"
+      ],
+      "usage": "Open any file via context menu > Open in Hex Viewer",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "pure Lua",
+      "license": "GPL-3.0",
+      "icon": "hex",
+      "colour": [
+        0.85,
+        0.8,
+        0.6
+      ],
+      "dependencies": [
+        "built-in engine"
+      ],
+      "builtin": true,
+      "open_screen": "hex_viewer",
+      "installed_check": "echo ok",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "Hex Viewer shows any file at the byte level with a classic 16-bytes-per-row layout.\n\nColumns:\n- Offset (hexadecimal)\n- Hex bytes (16 per row)\n- ASCII sidebar (printable characters, dots for non-printable)\n\nControls:\n- Up / Down: scroll one line\n- L1 / R1: scroll one page\n- Y: jump to top\n- X: jump to bottom\n\nRead-only by design: no editing, no accidental writes. Reads up to 2 MB per file for memory safety on handheld devices.\n\nAccess it from the file manager context menu: X on any file, then Open in Hex Viewer.",
+      "category": "files"
+    },
+    {
+      "id": "save_backup",
+      "name": "Save Backup",
+      "tagline": "Auto-backup emulator saves to SD2 or USB",
+      "description": "Scans save folders of every emulator (RetroArch, Dolphin, PPSSPP, DraStic and more), then mirrors them to a second SD or USB stick. One-tap backup, one-tap restore, automatic daily snapshot.",
+      "features": [
+        "Detects save folders of 10+ emulators",
+        "One-tap backup to SD2 or USB",
+        "Restore from any snapshot",
+        "Never touches the source files",
+        "Timestamped snapshot folders"
+      ],
+      "usage": "Open from Plugin list, choose destination, run backup",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "built-in screen",
+      "license": "GPL-3.0",
+      "icon": "archive",
+      "colour": [
+        0.35,
+        0.9,
+        0.5
+      ],
+      "dependencies": [
+        "built-in engine"
+      ],
+      "builtin": true,
+      "open_screen": "save_backup",
+      "installed_check": "echo ok",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "Save Backup protects your emulator saves by mirroring them to a second SD card or USB drive.\n\nEmulators detected (10+):\n- RetroArch saves and states\n- Dolphin (GameCube / Wii)\n- PPSSPP\n- DraStic\n- Pico-8\n- ScummVM\n- Flycast\n\nHow it works:\n- Scans every known save folder\n- Shows files and total size per folder\n- Press A to backup everything to SD2 (or USB if present)\n- Press X to see snapshots and restore\n\nSnapshots are timestamped: 20260925_143022. The source files are never touched.",
+      "category": "utilities"
+    },
+    {
+      "id": "screenshot_gallery",
+      "name": "Screenshot Gallery",
+      "tagline": "Browse every emulator screenshot",
+      "description": "A single gallery for all your emulator screenshots. Filter by system, sort by date, view fullscreen, delete in bulk and export selected shots to a custom folder.",
+      "features": [
+        "Scans every known screenshot folder",
+        "Thumbnail grid with lazy loading",
+        "Fullscreen preview with info strip",
+        "Delete single screenshots",
+        "Automatic rescan on demand"
+      ],
+      "usage": "Open from Plugin list",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "built-in screen",
+      "license": "GPL-3.0",
+      "icon": "web",
+      "colour": [
+        0.48,
+        0.8,
+        0.9
+      ],
+      "dependencies": [
+        "built-in engine"
+      ],
+      "builtin": true,
+      "open_screen": "screenshot_gallery",
+      "installed_check": "echo ok",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "Screenshot Gallery is a single hub for all your emulator screenshots.\n\nIt scans common screenshot folders:\n- /run/muos/storage/screenshot\n- /mnt/mmc/screenshots\n- /mnt/sdcard/screenshots\n- /mnt/mmc/retroarch/screenshots\n\nControls:\n- D-pad: navigate the grid (4 columns)\n- A: fullscreen with info strip\n- X: delete single screenshot (with confirmation)\n- Y: rescan folders\n\nThumbnails load lazily to keep memory low on handheld devices. Up to 200 screenshots are shown per scan.",
+      "category": "utilities"
+    },
+    {
+      "id": "image_resizer",
+      "name": "Image Resizer",
+      "tagline": "Batch resize images for muOS wallpapers and icons",
+      "description": "Resize, convert and rename images in bulk. Perfect for preparing muOS wallpapers at 640x480, icon sets at any size, or converting PNG / JPG / WebP with a single button.",
+      "features": [
+        "Batch resize any number of images",
+        "Presets: 640x480, 480x640, 720x720, custom",
+        "Pad to keep aspect ratio",
+        "Output to data/resized",
+        "Mark/unmark with SELECT"
+      ],
+      "usage": "Open from Plugin list, mark images, choose preset, resize",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "built-in screen",
+      "license": "GPL-3.0",
+      "icon": "web",
+      "colour": [
+        0.85,
+        0.55,
+        0.35
+      ],
+      "dependencies": [
+        "ffmpeg"
+      ],
+      "builtin": true,
+      "open_screen": "image_resizer",
+      "installed_check": "echo ok",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "Image Resizer prepares images for muOS wallpapers, icon sets or any custom use.\n\nPresets:\n- 640x480 (muOS default)\n- 480x640 (vertical)\n- 720x720 (square)\n- 1024x768\n- 1280x720\n- 256x256, 128x128, 64x64 (icons)\n\nHow it works:\n- Marks the images you want with SELECT\n- Press A to resize all marked\n- Output goes to data/resized/\n\nAspect ratio is preserved: the image is scaled down and padded with black bars to match the target size. Uses ffmpeg which is already present on muOS.",
+      "category": "utilities"
+    },
+    {
+      "id": "video_clipper",
+      "name": "Video Clipper",
+      "tagline": "Extract clips and GIFs with ffmpeg",
+      "description": "Mark in and out points on any video, then export a clip in any format ffmpeg supports. Includes an animated GIF preset for sharing.",
+      "features": [
+        "In / out point marking on a timeline",
+        "Export clip as MP4, MKV or WebM",
+        "One-tap animated GIF export",
+        "Output to data/clips",
+        "Uses ffmpeg already present on muOS"
+      ],
+      "usage": "Open any video file from Plugin list",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "built-in screen",
+      "license": "GPL-3.0",
+      "icon": "media",
+      "colour": [
+        0.95,
+        0.4,
+        0.85
+      ],
+      "dependencies": [
+        "ffmpeg"
+      ],
+      "builtin": true,
+      "open_screen": "video_clipper",
+      "installed_check": "echo ok",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "Video Clipper extracts clips and GIFs from any video file.\n\nControls:\n- L1 / R1: seek \u00b110 seconds\n- D-pad left / right: seek \u00b11 second\n- D-pad up: set IN point at cursor\n- D-pad down: set OUT point at cursor\n- X: cycle export format\n- Y: reset IN and OUT\n- A: export the range\n\nExport formats:\n- MP4 (H.264 + AAC)\n- MKV (stream copy)\n- WebM (VP9 + Opus)\n- Animated GIF (480px, 15 fps)\n\nOutput goes to data/clips/ with a timestamp. Uses ffmpeg already present on muOS.",
+      "category": "media"
+    },
+    {
+      "id": "epub_reader_pro",
+      "name": "EPUB Reader Pro",
+      "tagline": "TOC, bookmarks, reading themes -- already integrated",
+      "description": "EPUB Reader Pro is not a separate plugin: its features are already built into GD-X Library. Open any .epub file to get chapter TOC, per-file bookmarks with resume, three reading themes and skip navigation.",
+      "features": [
+        "Chapter TOC overlay (Y key)",
+        "Bookmark current page (START key)",
+        "Reading themes: dark, amber, light (X key)",
+        "Resume from last position (automatic)",
+        "Renders both EPUB2 and EPUB3"
+      ],
+      "usage": "Open any .epub from File Explorer",
+      "version": "1.0.0",
+      "author": "sirpips",
+      "source": "built-in GD-X Library",
+      "license": "GPL-3.0",
+      "icon": "pdf",
+      "colour": [
+        0.7,
+        0.55,
+        0.92
+      ],
+      "dependencies": [
+        "built-in engine"
+      ],
+      "builtin": true,
+      "open_screen": "epub_reader_guide",
+      "installed_check": "echo ok",
+      "date_added": "2026-09-25",
+      "new": true,
+      "documentation": "EPUB Reader Pro is not a separate plugin: its features are already built into GD-X Library.\n\nOpen any .epub file from File Explorer to get:\n\n- Chapter TOC overlay (Y key): full chapter tree with jump\n- Bookmark current page (START key): saved per file, resumed next time\n- Reading themes (X key): dark, amber, light\n- Skip navigation (L1 / R1)\n- Zoom (L2 / R2)\n\nThemes are stored in memory only; your choice is per-session. Bookmarks persist across restarts.\n\nRenders both EPUB2 (toc.ncx) and EPUB3 (nav.xhtml) chapter structures.",
+      "category": "documents"
+    }
+  ],
+  "muos_apps": [
+    {
+      "key": "voiddesk",
+      "name": "VOID-Desk 'Nexus'",
+      "tagline": "The definitive desktop layer for muOS",
+      "version": "v10.2.0",
+      "category": "Desktop Env",
+      "size_kb": 3226,
+      "format": ".muxapp",
+      "icon": "planet",
+      "colour": [
+        0.55,
+        0.75,
+        0.95
+      ],
+      "desc": "A real Linux machine lives inside your handheld. VoidDesk bootstraps XFCE, IceWM, and LXDE desktops in isolated Ubuntu chroots, launched on demand.",
+      "features": [
+        "Native interface: menus, files, text editor",
+        "Real terminal, networking, controller hub",
+        "Media vault and system diagnostics",
+        "No X server, no compositor, no GPU required",
+        "Everything is D-Pad first"
+      ],
+      "download": "https://github.com/SilverCrow2323/muOS-Void-Desk/releases/download/v10.2.0/VoidDesk_v10.2.0.muxapp",
+      "repo": "https://github.com/SilverCrow2323/muOS-Void-Desk",
+      "install_path": "/run/muos/storage/application/VoidDesk/mux_launch.sh",
+      "date_added": "2026-08-15",
+      "new": false
+    },
+    {
+      "key": "tailscale",
+      "name": "Rt:Tailscale",
+      "tagline": "Mesh-VPN interface for your handheld",
+      "version": "v3.0.6",
+      "category": "Web Service",
+      "size_kb": 462,
+      "format": ".muxapp",
+      "icon": "network",
+      "colour": [
+        0.9,
+        0.55,
+        0.95
+      ],
+      "desc": "Connect your muOS device to your Tailscale tailnet. Browse peers, send and receive files via Taildrop, manage exit nodes, and auth by QR code.",
+      "features": [
+        "Tailnet control with a single button press",
+        "Exit node management",
+        "Taildrop file transfer",
+        "Netcheck diagnostics: latency, NAT, UDP",
+        "QR code auth plus 3 visual themes"
+      ],
+      "download": "https://github.com/SilverCrow2323/muOS-Rt-Tailscale/releases/download/v3.0.6/RtTailscalev3.0.6.muxapp",
+      "repo": "https://github.com/SilverCrow2323/muOS-Rt-Tailscale",
+      "install_path": "/run/muos/storage/application/Tailscale/mux_launch.sh",
+      "date_added": "2026-08-20",
+      "new": false
+    },
+    {
+      "key": "bgm",
+      "name": "SPDW BGM Normalizer",
+      "tagline": "Professional audio normalization",
+      "version": "v8.6",
+      "category": "Audio Utility",
+      "size_kb": 179,
+      "format": ".muxapp",
+      "icon": "wave",
+      "colour": [
+        0.95,
+        0.75,
+        0.35
+      ],
+      "desc": "Convert, normalize, and optimize your music for the ultimate handheld BGM experience. Unifies MP3, FLAC, and WAV libraries into normalized OGG files.",
+      "features": [
+        "EBU R128 / ITU-R BS.1770 loudness targeting",
+        "MP3, FLAC, WAV, M4A, AAC, WMA, OPUS -> OGG",
+        "Silence trimming for gapless playback",
+        "3 themes, multilingual UI, audio preview",
+        "Zero dependencies, pure Python + SDL2"
+      ],
+      "download": "https://github.com/SilverCrow2323/muOS-BGM-Normalizer/releases/download/v8.6/BGM_Normalizer_muOS_v8.6.muxapp",
+      "repo": "https://github.com/SilverCrow2323/muOS-BGM-Normalizer",
+      "install_path": "/run/muos/storage/application/BGM_Normalizer/mux_launch.sh",
+      "date_added": "2026-09-10",
+      "new": false
+    },
+    {
+      "key": "dolphin",
+      "name": "Dolphin Rt:Core",
+      "tagline": "GameCube and Wii emulation for H700",
+      "version": "v10.5.3",
+      "category": "Emulator",
+      "size_kb": 4689,
+      "format": ".muxupd",
+      "icon": "dolphin",
+      "colour": [
+        0.55,
+        0.85,
+        0.95
+      ],
+      "desc": "GameCube and Wii emulation on muOS, tuned for the Allwinner H700. Three editions: Standalone, Bash Arsenal (21 profiles, 17 toggles), and Frontendone.",
+      "features": [
+        "Dedicated compatibility database with FPS stats",
+        "Standalone: drop-in external emulator",
+        "Bash Arsenal: profiles, toggles, logs, reports",
+        "Frontendone: full frontend coming soon",
+        "Surgical tuning for a 1 GB RAM budget"
+      ],
+      "download": "https://github.com/SilverCrow2323/Dolphin-Core-for-MuOS/releases/download/v10.5.300/Dolphin_for_MuOS_v10.5.3.muxupd",
+      "repo": "https://github.com/SilverCrow2323/Dolphin-Core-for-MuOS",
+      "install_path": "/opt/muos/share/emulator/dolphin/dolphin",
+      "date_added": "2026-09-15",
+      "new": false
+    }
+  ]
+}

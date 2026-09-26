@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: luacheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "luajit-2.1"
+
+      - uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install luacheck
+        run: luarocks install luacheck
+
+      - name: Run luacheck
+        run: luacheck . --no-color
+
+  test:
+    name: busted
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "luajit-2.1"
+
+      - uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install busted
+        run: luarocks install busted
+
+      - name: Run tests
+        run: busted tests/
+
+  test-native:
+    name: busted (with lfs + cjson)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "luajit-2.1"
+
+      - uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install busted, lfs and cjson
+        run: |
+          luarocks install busted
+          luarocks install luafilesystem
+          luarocks install lua-cjson
+
+      - name: Run tests with native modules available
+        run: busted tests/

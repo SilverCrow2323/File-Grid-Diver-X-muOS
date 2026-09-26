@@ -1,0 +1,15 @@
+return {
+  name     = "Office Reader",
+  key      = "office_reader",
+  category = "Extensions",
+  version  = "1.0.0",
+  author   = "sirpips",
+  desc     = "view DOCX, XLSX, PPTX files",
+  icon     = "doc",
+  colour   = {0.95, 0.70, 0.30},
+  entry    = "main",
+  priority = 20,
+  extender = true,
+  extensions = { "docx", "xlsx", "pptx" },
+  permissions = { "shell.exec", "filesystem.read" },
+}
