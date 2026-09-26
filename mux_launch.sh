@@ -31,7 +31,7 @@ export HOME="$GAME_DIR/data"
 export LD_LIBRARY_PATH="$DIR/lib/aarch64:$DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # PyMuPDF (wheel estratto)
-export PYTHONPATH="$DIR/data/pdf_pack/lib${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$DIR/plugins/pdf_lib/lib:$DIR/plugins/pdf_lib:$DIR/data/pdf_pack/lib${PYTHONPATH:+:$PYTHONPATH}"
 
 export PATH="tools:$PATH"
 cd "$GAME_DIR" || exit 1

@@ -7,13 +7,20 @@ local PermDialog = require("ui.perm_dialog")
 
 local M = { all = {}, by_key = {} }
 
+-- Cartelle dentro plugins/ che NON sono plugin: bundle, risorse, ecc.
+local SKIP_DIRS = {
+  pdf_lib = true,   -- bundle PyMuPDF per il supporto PDF (FULL release)
+}
+
 local function list_dirs()
   local out = {}
   local h = io.popen("ls -1d plugins/*/ 2>/dev/null")
   if not h then return out end
   for line in h:lines() do
     local pkg = line:match("plugins/([^/]+)/")
-    if pkg then out[#out + 1] = pkg end
+    if pkg and not SKIP_DIRS[pkg] then
+      out[#out + 1] = pkg
+    end
   end
   h:close()
   return out

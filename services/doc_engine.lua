@@ -19,7 +19,9 @@ end
 -- IMPORTANTE: __pdf_prefix deve essere DEFINITA PRIMA di qualunque
 -- chiamata, altrimenti in Lua la local e' nil.
 local function __pdf_prefix()
-  local cands = { "data/pdf_pack/lib", "data/pdf_pack",
+  -- Priorità: bundle FULL del pacchetto, poi fallback storici.
+  local cands = { "plugins/pdf_lib/lib", "plugins/pdf_lib",
+                  "data/pdf_pack/lib", "data/pdf_pack",
                   "data/downloads/extracted" }
   for _, d in ipairs(cands) do
     local h = io.popen("test -d " .. sh.shq(d .. "/pymupdf") ..

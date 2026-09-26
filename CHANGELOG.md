@@ -183,14 +183,14 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.2.0] - 2026-09-21
 
-Early release. 
+Early release.
 ## [1.1.10] - 2026-09-21
 
-Early release. 
+Early release.
 ## [1.1.0] - 2026-09-21
 
 First multi-plugin build.
 
 ## [1.0.0] - 2026-09-21
 
-Initial packaged release. 
+Initial packaged release.

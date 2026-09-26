@@ -67,3 +67,5 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+# Bundle PyMuPDF (FULL release) — non va su GitHub
+plugins/pdf_lib/

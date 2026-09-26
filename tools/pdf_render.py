@@ -5,9 +5,12 @@ import sys, os
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
 for _cand in (
+    os.path.join(_ROOT, "plugins", "pdf_lib", "lib"),
+    os.path.join(_ROOT, "plugins", "pdf_lib"),
     os.path.join(_ROOT, "data", "pdf_pack", "lib"),
+    "plugins/pdf_lib/lib",
     "data/pdf_pack/lib",
-    "/opt/muos/share/fgdx/pdf_pack/lib",
+    "/opt/muos/share/fgdx/pdf_lib/lib",
 ):
     if os.path.isdir(os.path.join(_cand, "pymupdf")) and _cand not in sys.path:
         sys.path.insert(0, _cand)

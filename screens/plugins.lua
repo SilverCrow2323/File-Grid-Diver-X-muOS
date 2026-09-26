@@ -309,9 +309,9 @@ local function store_filtered()
   for _, p in ipairs(store_items) do
     local keep = false
     if f == "all" then keep = true
-    elseif f == "ready" then keep = p.installed and not p.disabled                     
+    elseif f == "ready" then keep = p.installed and not p.disabled
     elseif f == "off" then keep = p.installed and p.disabled
-    elseif f == "missing" then keep = (not p.installed)                     
+    elseif f == "missing" then keep = (not p.installed)
     elseif f == "new" then keep = p.is_new end
     if keep then out[#out + 1] = p end
   end

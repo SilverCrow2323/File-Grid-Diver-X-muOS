@@ -28,6 +28,7 @@ require("core.native")
 local State = require("core.state")
 local Input = require("core.input_map")
 local SFX   = require("core.audio")
+local UnlockOverlay = require("ui.unlock_overlay")   -- FGDX_UNLOCK_OVERLAY
 
 -- ------------------------------------------------------------
 -- 1. Screen registry
@@ -340,11 +341,8 @@ local FB_AUDIO_X_BUF = 0
 local FB_AUDIO_Y_BUF = 0
 
 local FB_SEQ = { "dpright", "dpleft", "dpdown", "dpup",
-                 "dpright", "dpleft", "dpdown", "dpup", "start" }
+                 "dpright", "dpleft", "dpdown", "dpup" }
 local FB_BUF = {}
-
-local function fb_check(name)
-  if not FB then return false end
 
 -- FGDX_FB_VIEW: codice 1
 local function fb_view_check(name)
@@ -389,6 +387,8 @@ local function fb_audio_check_y(name)
   return false
 end
 
+local function fb_check(name)
+  if not FB then return false end
   if current_name ~= "mainmenu" or FB.active then
     FB_BUF = {}
     return false
@@ -729,6 +729,7 @@ end
 -- 19. love.update
 -- ------------------------------------------------------------
 function love.update(dt)
+  UnlockOverlay.update(dt)                             -- FGDX_UNLOCK_OVERLAY
   State.t_ui = (State.t_ui or 0) + dt
 
   -- Poll del risultato update check (una volta ogni ~2s, max 5 tentativi)
@@ -822,6 +823,10 @@ function love.draw()
         16, 100 + (i - 1) * 14)
     end
   end
+
+  if UnlockOverlay.is_active() then                     -- FGDX_UNLOCK_OVERLAY
+    UnlockOverlay.draw()
+  end
 end
 
 function love.focus(f)
@@ -836,6 +841,12 @@ end
 local held_buttons = {}
 
 function love.gamepadpressed(_, name)
+  -- Unlock overlay: any button skips it and is consumed
+  if UnlockOverlay.is_active() then                    -- FGDX_UNLOCK_OVERLAY
+    UnlockOverlay.skip()
+    return
+  end
+
   -- Plugin intro: any button skips it
   do
     local PI = require("ui.plugin_intro")
@@ -886,10 +897,8 @@ function love.gamepadpressed(_, name)
     State.fb_view_used = true
     local ok, Store = pcall(require, "core.settings_store")
     if ok then Store.set("dev", "fb_view_unlocked", true); Store.save() end
-    local ok2, SFX = pcall(require, "core.audio")
-    if ok2 and SFX.play then SFX.play("finalbout") end
-    local ok3, N = pcall(require, "ui.notify")
-    if ok3 then N.show("success", "FINAL BOUT view unlocked (L2/R2)", 4.0) end
+    local kind = State.fb_audio_used and "both" or "view"
+    UnlockOverlay.trigger(kind)                        -- FGDX_UNLOCK_OVERLAY
     return
   end
 
@@ -905,14 +914,9 @@ function love.gamepadpressed(_, name)
     local ok, Store = pcall(require, "core.settings_store")
     if ok then Store.set("dev", "fb_audio_unlocked", true); Store.save() end
     local ok2, SFX = pcall(require, "core.audio")
-    if ok2 and SFX.play then
-      SFX.play("finalbout")           -- conferma
-      SFX.set_fb_mode(true)            -- attiva modalita'
-      -- jingle dopo un piccolo delay
-      State._fb_jingle_t = 0.35
-    end
-    local ok3, N = pcall(require, "ui.notify")
-    if ok3 then N.show("success", "FB AUDIO MODE unlocked", 4.0) end
+    if ok2 and SFX.set_fb_mode then SFX.set_fb_mode(true) end
+    local kind = State.fb_view_used and "both" or "audio"
+    UnlockOverlay.trigger(kind)                        -- FGDX_UNLOCK_OVERLAY
     return
   end
 
@@ -1013,6 +1017,12 @@ local K2P = {
 }
 
 function love.keypressed(k)
+  -- Unlock overlay: any key skips it
+  if UnlockOverlay.is_active() then                    -- FGDX_UNLOCK_OVERLAY
+    UnlockOverlay.skip()
+    return
+  end
+
   -- Plugin intro: any key skips it and is consumed
   do
     local PI = require("ui.plugin_intro")
