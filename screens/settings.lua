@@ -47,15 +47,17 @@ local function tog(label, hint, sec, key, default, on_change)
   }
 end
 
-local function enu(label, hint, sec, key, options, default, on_change)
+local function enu(label, hint, sec, key, options, default, on_change, is_disabled)
   return {
     kind = "enum", label = label, hint = hint,
+    is_disabled = is_disabled,
     get = function()
       local v = Store.get(sec, key)
       if v == nil or v == "" then return default end
       return v
     end,
     cycle = function(dir)
+      if is_disabled and is_disabled() then return end
       local cur = Store.get(sec, key)
       if cur == nil or cur == "" then cur = default end
       local i = 1
@@ -101,121 +103,156 @@ end
 --  Tabs
 -- ============================================================
 local TABS = {
-  { id="general", label="GENERAL", accent=AMB, rows={
-    enu("Theme", "colore dell'interfaccia",
-      "general", "theme",
-      {"blame","neon","toxic","blood","deepseek"}, "blame",
-      function(new)
-        State.theme_name = new
-        local ok, m = pcall(require, "themes.theme_"..new)
-        if ok and m then
-          State.theme = m
-          love.graphics.setBackgroundColor(m.bg)
-        end
-        Notify.show("success", "theme: "..new)
-      end),
-    sld("Font scale", "dimensione testo globale",
-      "ui", "font_scale", 0.80, 1.80, 0.05,
-      function(v) return string.format("%.2fx", v) end, 1.20),
-    enu("Font family", "font alternativo",
-      "ui", "font_family",
-      {"auto","orbitron","oxanium","mono","default"}, "auto",
-      function() require("core.assets").clear_cache() end),
-  }},
+  { id="interface", label="INTERFACE", accent=AMB, rows=function()
+    return {
+      { kind = "header", label = "APPEARANCE" },
+      enu("Theme", "colore dell'interfaccia",
+        "general", "theme",
+        {"blame","neon","toxic","blood","deepseek"}, "blame",
+        function(new)
+          State.theme_name = new
+          local ok, m = pcall(require, "themes.theme_"..new)
+          if ok and m then
+            State.theme = m
+            love.graphics.setBackgroundColor(m.bg)
+          end
+          Notify.show("success", "theme: "..new)
+        end,
+        function() return State.fb_view_used == true end
+      ),
+      enu("Font family", "font alternativo",
+        "ui", "font_family",
+        {"auto","orbitron","oxanium","mono","default"}, "auto",
+        function() require("core.assets").clear_cache() end),
+      sld("Font scale", "dimensione testo globale",
+        "ui", "font_scale", 0.80, 1.80, 0.05,
+        function(v) return string.format("%.2fx", v) end, 1.20),
 
-  { id="layout", label="LAYOUT", accent=CYA, rows={
-    enu("View mode", "default del file manager",
-      "general", "view", {"list","grid","compact","details"}, "list"),
-    enu("Main hub view", "stile della main menu",
-      "ui", "mainmenu_view",
-      {"classic","rez","grid","list","expanded list"}, "classic"),
-    tog("Dual panel", "due directory affiancate",
-      "general", "dual", false),
-  }},
+      { kind = "header", label = "SOUND" },
+      tog("Sound effects", "SFX di sistema", "sound", "enabled", false,
+        function(v)
+          local ok, SFX = pcall(require, "core.audio")
+          if ok then SFX.set_enabled(v) end
+        end),
+      enu("SFX Set", "system / Final Bout", "sound", "set",
+        {"default","finalbout"}, "default",
+        function(v)
+          local ok, SFX = pcall(require, "core.audio")
+          if ok and SFX.set_fb_mode then SFX.set_fb_mode(v == "finalbout") end
+        end,
+        function() return Store.get("sound", "enabled") ~= true end
+      ),
+      sld("Sound volume", "volume SFX", "sound", "volume", 0, 100, 5,
+        function(v) return string.format("%d%%", v) end, 70,
+        function(v)
+          local ok, SFX = pcall(require, "core.audio")
+          if ok then SFX.set_volume(v/100) end
+        end),
 
-  { id="browser", label="BROWSER", accent=GRN, rows={
-    enu("Default sort", "ordine dei file",
-      "sort", "key", {"name","size","date","type"}, "name"),
-    tog("Folders first", "cartelle prima dei file",
-      "sort", "folders_first", true),
-    tog("Show hidden", "mostra file .nascosti",
-      "general", "show_hidden", false),
-  }},
+      { kind = "header", label = "VIEWS" },
+      enu("File manager view", "default del file manager",
+        "general", "view", {"list","grid","compact","details"}, "list"),
+      enu("Main hub view", "stile del main menu",
+        "ui", "mainmenu_view",
+        {"console","rez","cartridge","marquee","hud"}, "console"),
+      tog("Dual panel", "due directory affiancate",
+        "general", "dual", false),
+    }
+  end },
 
-  { id="header", label="HEADER", accent=BLU, rows={
-    tog("Clock", "orologio nell'header", "ui", "show_clock", true),
-    tog("Wi-Fi signal", "indicatore wifi", "ui", "show_wifi", true),
-    tog("Battery", "livello batteria", "ui", "show_battery", true),
-    tog("Memory", "uso RAM", "ui", "show_mem", true),
-    tog("Download indicator", "pill download", "ui", "show_download", true),
-    tog("Neon header logo", "logo appeso", "ui", "header_logo", true),
-  }},
+  { id="browser", label="BROWSER", accent=CYA, rows=function()
+    return {
+      { kind = "header", label = "SORTING" },
+      enu("Default sort", "ordine dei file",
+        "sort", "key", {"name","size","date","type"}, "name"),
+      tog("Folders first", "cartelle prima dei file",
+        "sort", "folders_first", true),
 
-  { id="interface", label="INTERFACE", accent=PUR, rows={
-    tog("Show FPS", "contatore frame", "ui", "show_fps", false),
-    tog("Particles & effects", "animazioni e particelle",
-      "ui", "particles", true),
-    tog("Sound effects", "SFX di sistema", "sound", "enabled", false,
-      function(v)
-        local ok, SFX = pcall(require, "core.audio")
-        if ok then SFX.set_enabled(v) end
-      end),
-    sld("Sound volume", "volume SFX", "sound", "volume", 0, 100, 5,
-      function(v) return string.format("%d%%", v) end, 70,
-      function(v)
-        local ok, SFX = pcall(require, "core.audio")
-        if ok then SFX.set_volume(v/100) end
-      end),
-    sld("Header thickness", "altezza barra superiore",
-      "ui", "header_h", 34, 72, 4,
-      function(v) return v .. " px" end, 48),
-    sld("Footer thickness", "altezza barra inferiore",
-      "ui", "footer_h", 28, 64, 4,
-      function(v) return v .. " px" end, 40),
-  }},
+      { kind = "header", label = "VISIBILITY" },
+      tog("Show hidden files", "mostra file .nascosti",
+        "general", "show_hidden", false),
+    }
+  end },
 
-  { id="updates", label="UPDATES", accent=YEL, rows={
-    tog("Auto-update catalog", "scarica catalog.json ad ogni boot",
-      "update", "auto_catalog", true),
-    tog("Check app updates", "notifica nuova versione",
-      "update", "auto_app_check", true),
-    act("Refresh catalog now", "scarica subito catalog.json",
-      function()
-        local ok, Cat = pcall(require, "services.catalog")
-        if not ok then Notify.show("error", "catalog service missing"); return end
-        Cat.refresh_async()
-        Notify.show("info", "refresh in background")
+  { id="header", label="HEADER", accent=BLU, rows=function()
+    return {
+      { kind = "header", label = "ELEMENTS" },
+      tog("Clock", "orologio nell'header", "ui", "show_clock", true),
+      tog("Wi-Fi signal", "indicatore wifi", "ui", "show_wifi", true),
+      tog("Battery", "livello batteria", "ui", "show_battery", true),
+      tog("Memory", "uso RAM", "ui", "show_mem", true),
+      tog("Download indicator", "pill download", "ui", "show_download", true),
+      tog("Neon header logo", "logo appeso", "ui", "header_logo", true),
+
+      { kind = "header", label = "SIZING" },
+      sld("Header thickness", "altezza barra superiore",
+        "ui", "header_h", 34, 72, 4,
+        function(v) return v .. " px" end, 48),
+      sld("Footer thickness", "altezza barra inferiore",
+        "ui", "footer_h", 28, 64, 4,
+        function(v) return v .. " px" end, 40),
+    }
+  end },
+
+  { id="effects", label="EFFECTS", accent=PUR, rows=function()
+    return {
+      { kind = "header", label = "VISUAL EFFECTS" },
+      tog("Particles & effects", "animazioni e particelle",
+        "ui", "particles", true),
+      tog("Show FPS", "contatore frame", "ui", "show_fps", false),
+    }
+  end },
+
+  { id="updates", label="UPDATES", accent=YEL, rows=function()
+    return {
+      { kind = "header", label = "CATALOG" },
+      tog("Auto-update catalog", "scarica catalog.json ad ogni boot",
+        "update", "auto_catalog", true),
+      act("Refresh catalog now", "scarica subito catalog.json",
+        function()
+          local ok, Cat = pcall(require, "services.catalog")
+          if not ok then Notify.show("error", "catalog service missing"); return end
+          Cat.refresh_async()
+          Notify.show("info", "refresh in background")
+        end),
+      inf("Local cache age", function()
+        local f = io.open("data/catalog.cache.json", "r")
+        if not f then return "no cache" end
+        f:close()
+        local out = require("core.sh").read(
+          "stat -c %Y data/catalog.cache.json 2>/dev/null")
+        local t = tonumber(out or "0") or 0
+        if t == 0 then return "?" end
+        local age = os.time() - t
+        if age < 3600 then return string.format("%d min", math.floor(age/60)) end
+        if age < 86400 then return string.format("%d h", math.floor(age/3600)) end
+        return string.format("%d d", math.floor(age/86400))
       end),
-    act("Check app version", "confronta con remoto",
-      function()
-        local ok, Cat = pcall(require, "services.catalog")
-        if not ok then Notify.show("error", "catalog service missing"); return end
-        Cat.check_app_version_async(State.app_version or "v1.5.0")
-        Notify.show("info", "check in background")
-      end),
-    inf("Local cache age", function()
-      local f = io.open("data/catalog.cache.json", "r")
-      if not f then return "no cache" end
-      f:close()
-      local out = require("core.sh").read(
-        "stat -c %Y data/catalog.cache.json 2>/dev/null")
-      local t = tonumber(out or "0") or 0
-      if t == 0 then return "?" end
-      local age = os.time() - t
-      if age < 3600 then return string.format("%d min", math.floor(age/60)) end
-      if age < 86400 then return string.format("%d h", math.floor(age/3600)) end
-      return string.format("%d d", math.floor(age/86400))
-    end),
-  }},
+
+      { kind = "header", label = "APPLICATION" },
+      tog("Check app updates", "notifica nuova versione",
+        "update", "auto_app_check", true),
+      act("Check app version", "confronta con remoto",
+        function()
+          local ok, Cat = pcall(require, "services.catalog")
+          if not ok then Notify.show("error", "catalog service missing"); return end
+          Cat.check_app_version_async(State.app_version or "v1.5.0")
+          Notify.show("info", "check in background")
+        end),
+    }
+  end },
 
   { id="system", label="SYSTEM", accent=RED, rows=function()
     local r = {}
+    r[#r+1] = { kind = "header", label = "ABOUT" }
     r[#r+1] = act("About File-GD X", "versione, crediti, licenza",
       function() State.go("about") end)
-    if State.fb_view_used then
-      r[#r+1] = act("About Final Bout", "easter egg tribute + credits",
-        function() State.go("about_fb") end)
+    if State.fb_view_used or State.fb_audio_used then
+      r[#r+1] = act("On the 'Final Bout'", "the game that left a mark",
+        function() State.go("about_fb_game") end)
     end
+
+    r[#r+1] = { kind = "header", label = "TOOLS" }
     r[#r+1] = act("Key guide", "tutti i binding in un posto",
       function() State.go("help") end)
     r[#r+1] = act("Open log viewer", "log runtime e sessione",
@@ -224,9 +261,11 @@ local TABS = {
       r[#r+1] = {
         kind = "grid_dev",
         label = "GRiD-Dev",
-        hint = "developer console  ·  restricted access",
+        hint = "developer console",
       }
     end
+
+    r[#r+1] = { kind = "header", label = "DANGER ZONE" }
     r[#r+1] = act("Reset all settings", "ripristina i default",
       function()
         Modal.show("Reset all settings",
@@ -288,6 +327,7 @@ function S.enter()
     sel = 1
   end
   clamp_sel()
+  ensure_selectable(1)
 end
 
 function S.leave()
@@ -304,12 +344,35 @@ end
 -- ============================================================
 --  Navigation
 -- ============================================================
+local function is_header_idx(i)
+  local rows = cur_rows()
+  local r = rows and rows[i]
+  return r and r.kind == "header"
+end
+
+local function ensure_selectable(dir)
+  dir = dir or 1
+  local n = #cur_rows()
+  if n == 0 then sel = 1; return end
+  if not is_header_idx(sel) then return end
+  for _ = 1, n do
+    sel = sel + dir
+    if sel < 1 then sel = 1; dir = 1 end
+    if sel > n then sel = n; dir = -1 end
+    if not is_header_idx(sel) then return end
+  end
+end
+
 local function move_row(d)
   local n = #cur_rows()
   if n == 0 then return end
-  sel = sel + d
-  if sel < 1 then sel = n end
-  if sel > n then sel = 1 end
+  local i = sel
+  for _ = 1, n do
+    i = i + d
+    if i < 1 then i = n end
+    if i > n then i = 1 end
+    if not is_header_idx(i) then sel = i; return end
+  end
 end
 
 local function cycle_tab(d)
@@ -317,12 +380,14 @@ local function cycle_tab(d)
   if cur_tab < 1 then cur_tab = NTAB end
   if cur_tab > NTAB then cur_tab = 1 end
   sel = 1
+  ensure_selectable(1)
   S._scroll = 0
 end
 
 local function cycle_value(dir)
   local r = cur_row()
   if not r then return end
+  if r.is_disabled and r.is_disabled() then return end
   if r.kind == "enum" or r.kind == "slider" then
     if r.cycle then r.cycle(dir) end
   elseif r.kind == "toggle" then
@@ -333,6 +398,7 @@ end
 local function activate()
   local r = cur_row()
   if not r then return end
+  if r.is_disabled and r.is_disabled() then return end
   if r.kind == "toggle" then
     if r.toggle then r.toggle() end
   elseif r.kind == "enum" or r.kind == "slider" then
@@ -358,7 +424,7 @@ function S.hat(dir)
   elseif dir == "down" then
     move_row(1)
   elseif dir == "left" then
-    if value_row then
+    if value_row and not (r.is_disabled and r.is_disabled()) then
       local ok, SFX = pcall(require, "core.audio")
       if ok then
         if r.kind == "toggle" then SFX.play("toggle_switch")
@@ -367,7 +433,7 @@ function S.hat(dir)
       cycle_value(-1)
     end
   elseif dir == "right" then
-    if value_row then
+    if value_row and not (r.is_disabled and r.is_disabled()) then
       local ok, SFX = pcall(require, "core.audio")
       if ok then
         if r.kind == "toggle" then SFX.play("toggle_switch")
@@ -489,7 +555,7 @@ local function draw_badge(cx, cy, r, accent, focused, kind)
   love.graphics.setLineWidth(1)
 end
 
-local function draw_enum(x_right, cy, value, accent, focused)
+local function draw_enum(x_right, cy, value, accent, focused, disabled)
   local f = A.font(A.FONT_MONO, 12)
   love.graphics.setFont(f)
   local tw = f:getWidth(value)
@@ -499,26 +565,37 @@ local function draw_enum(x_right, cy, value, accent, focused)
   local pill_w = math.max(60, tw + 22)
   local total = r*2 + gap + pill_w + gap + r*2
   local start_x = x_right - total
+  local dim = disabled == true
 
-  draw_badge(start_x + r, cy, r, accent, focused, "minus")
+  if not dim then
+    draw_badge(start_x + r, cy, r, accent, focused, "minus")
+  end
 
   local px = start_x + r*2 + gap
-  col({accent[1]*0.15, accent[2]*0.15, accent[3]*0.15}, focused and 1 or 0.55)
+  col({accent[1]*0.15, accent[2]*0.15, accent[3]*0.15},
+    dim and 0.30 or (focused and 1 or 0.55))
   love.graphics.rectangle("fill", px, cy - pill_h/2, pill_w, pill_h,
     pill_h/2, pill_h/2)
-  if focused then
+
+  if focused and not dim then
     col(accent, 0.9)
     love.graphics.setLineWidth(1.4)
     love.graphics.rectangle("line", px + 0.5, cy - pill_h/2 + 0.5,
       pill_w - 1, pill_h - 1, pill_h/2, pill_h/2)
     love.graphics.setLineWidth(1)
   end
-  col(focused and {1,1,1} or {0.75, 0.78, 0.80}, 1)
+
+  if dim then
+    col({0.42, 0.42, 0.46}, 1)
+  else
+    col(focused and {1,1,1} or {0.75, 0.78, 0.80}, 1)
+  end
   love.graphics.printf(value, px, cy - 7, pill_w, "center")
 
-  draw_badge(start_x + total - r, cy, r, accent, focused, "plus")
+  if not dim then
+    draw_badge(start_x + total - r, cy, r, accent, focused, "plus")
+  end
 end
-
 local function draw_slider(x, y, w, value, minv, maxv, fmt, focused, accent)
   local f = A.font(A.FONT_MONO, 12)
   love.graphics.setFont(f)
@@ -662,6 +739,7 @@ local ROW_H_GD   = 58
 local ROW_GAP    = 4
 
 local function row_h(r)
+  if r.kind == "header" then return 28 end
   if r.kind == "slider" then return ROW_H_SLDR end
   if r.kind == "grid_dev" then return ROW_H_GD end
   return ROW_H
@@ -669,6 +747,15 @@ end
 
 local function draw_row(r, x, y, w, focused, accent, idx)
   local h = row_h(r)
+
+  if r.kind == "header" then
+    love.graphics.setFont(A.font(A.FONT_MONO, 10))
+    col(accent, 0.85)
+    love.graphics.print(r.label, x + 8, y + 6)
+    col(accent, 0.28)
+    love.graphics.rectangle("fill", x + 8, y + 20, w - 16, 1)
+    return
+  end
 
   if r.kind == "grid_dev" then
     draw_grid_dev_row(x, y, w, h, focused)
@@ -714,7 +801,9 @@ local function draw_row(r, x, y, w, focused, accent, idx)
       "t" .. cur_tab .. "_" .. idx, accent)
 
   elseif r.kind == "enum" then
-    draw_enum(right_x, y + h/2, tostring(r.get()), accent, focused)
+    local disabled = r.is_disabled and r.is_disabled() or false
+    draw_enum(right_x, y + h/2, tostring(r.get()), accent,
+      focused and not disabled, disabled)
 
   elseif r.kind == "slider" then
     draw_slider(x + 16, y + 32, w - 32, r.get(),
@@ -782,10 +871,6 @@ end
 --  Main draw
 -- ============================================================
 function S.draw()
-  do
-    local ok, FBBG = pcall(require, "ui.fb_background")
-    if ok then FBBG.draw("settings", 0.35) end
-  end
   D.bg()
 
   local tab = TABS[cur_tab]
