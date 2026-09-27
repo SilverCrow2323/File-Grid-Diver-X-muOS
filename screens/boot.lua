@@ -11,7 +11,7 @@ local D     = require("ui.draw")
 local S = {}
 local W, H = 640, 480
 
-local TOTAL = 1.8
+local TOTAL = 3.0
 
 local t = 0
 local skipped = false
@@ -30,7 +30,7 @@ local function finish()
   finished = true
   if S._fb_startup then
     local ok, SFX = pcall(require, "core.audio")
-    if ok and SFX.fade_bgm then SFX.fade_bgm(1.2) end
+    if ok and SFX.stop_bgm then SFX.stop_bgm() end
     S._fb_startup = nil
   end
   State.booted = true
@@ -41,6 +41,7 @@ function S.enter()
   t = 0
   skipped = false
   finished = false
+  S._fb_startup = false
 
   local okS, Store = pcall(require, "core.settings_store")
   local State = require("core.state")
@@ -53,8 +54,10 @@ function S.enter()
     end
   end
 
-  local ok, SFX = pcall(require, "core.audio")
-  if ok then SFX.play("boot") end
+  if not S._fb_startup then
+    local ok, SFX = pcall(require, "core.audio")
+    if ok then SFX.play("boot") end
+  end
 end
 
 function S.leave() end
@@ -237,15 +240,38 @@ function S.draw()
       local fade_out = math.min(1, (TOTAL - t) / 0.5)
       local fade_alpha = math.max(0, math.min(fade_in, fade_out))
       if FBBG.draw("startup", fade_alpha) then
-        local now = love.timer.getTime()
-        local pulse = 0.6 + 0.4 * math.sin(now * 3)
-        love.graphics.setColor(1, 0.9, 0.3, pulse * fade_alpha)
-        love.graphics.setFont(A.font(A.FONT_TITLE, 28))
-        -- PRESS START più a sinistra
-        love.graphics.printf("PRESS START", 0, 380, W * 0.6, "center")
-        love.graphics.setColor(1, 1, 1, 1)
-        D.scanlines(W, H, 0.10)
-        D.vignette(W, H, 0.65)
+        
+    local now = love.timer.getTime()
+    local pulse = 0.6 + 0.4 * math.sin(now * 3)
+    local blink_alpha = (0.45 + 0.55 * pulse) * fade_alpha
+
+    -- "PRESS ANY KEY": font con bordo, piu' piccolo, spostato verso sx.
+    local msg = "PRESS ANY KEY"
+    local msg_font = A.font(A.FONT_TITLE, 22)
+    love.graphics.setFont(msg_font)
+
+    -- Area di centratura ridotta a W*0.5 -> il testo si dispone
+    -- verso la sinistra dello schermo (centro a W*0.25).
+    local msg_w = W * 0.5
+    local msg_x = 0
+    local msg_y = 380
+
+    -- Bordo nero spesso: disegna il testo a offset in 8 direzioni.
+    local outline = 2
+    love.graphics.setColor(0, 0, 0, blink_alpha)
+    for dx = -outline, outline do
+      for dy = -outline, outline do
+        if dx ~= 0 or dy ~= 0 then
+          love.graphics.printf(msg, msg_x + dx, msg_y + dy, msg_w, "center")
+        end
+      end
+    end
+
+    -- Corpo del testo (giallo Final Bout)
+    love.graphics.setColor(1, 0.90, 0.30, blink_alpha)
+    love.graphics.printf(msg, msg_x, msg_y, msg_w, "center")
+    love.graphics.setColor(1, 1, 1, 1)
+
         return
       end
     end

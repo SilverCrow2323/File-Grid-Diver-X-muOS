@@ -1053,6 +1053,9 @@ function love.joystickhat(_, _, dir)
     u="up", d="down", l="left", r="right",
     ru="up", rd="down", lu="up", ld="down",
   }
+  local horiz = {
+    ru="right", rd="right", lu="left", ld="left"
+  }
   local d = map[dir]
   if capture_active() then
     if type(current.capture_input) == "function" then
@@ -1061,13 +1064,23 @@ function love.joystickhat(_, _, dir)
     return
   end
   if d then
-    if not pass_dedup("hat", d) then return end
-    log_input("hat", d)
-    SFX.play(nav_sound())
-    call_screen("hat", d)
+    if pass_dedup("hat", d) then
+      log_input("hat", d)
+      SFX.play(nav_sound())
+      call_screen("hat", d)
+    end
+    local h = horiz[dir]
+    if h then
+      if pass_dedup("hat", h) then
+        log_input("hat", h)
+        SFX.play(nav_sound())
+        call_screen("hat", h)
+      end
+    end
   end
 end
 
+local trigger_pressed = { [4] = false, [5] = false }
 function love.joystickaxis(_, axis, value)
   if modal_open() then return end
   if capture_active() then
@@ -1077,10 +1090,24 @@ function love.joystickaxis(_, axis, value)
     return
   end
   if axis == 4 then
-    if math.abs(value) >= 0.5 then dispatch_pad("lefttrigger") end
+    if math.abs(value) >= 0.5 then
+      if not trigger_pressed[4] then
+        trigger_pressed[4] = true
+        dispatch_pad("lefttrigger")
+      end
+    else
+      trigger_pressed[4] = false
+    end
     return
   elseif axis == 5 then
-    if math.abs(value) >= 0.5 then dispatch_pad("righttrigger") end
+    if math.abs(value) >= 0.5 then
+      if not trigger_pressed[5] then
+        trigger_pressed[5] = true
+        dispatch_pad("righttrigger")
+      end
+    else
+      trigger_pressed[5] = false
+    end
     return
   end
   if     axis == 0 then stick.lx = value; process_stick("l", stick.lx, stick.ly)

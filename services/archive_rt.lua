@@ -235,18 +235,6 @@ function M.extract(path, opts)
       local cmd = "unrar x -o+ " .. sh.shq(path) .. " " .. sh.shq(dir .. "/") .. " 2>&1"
       return sh.exec(cmd) == 0
     end
-  elseif kind == "rar" then
-    if not tool_available("unrar") then return false, "unrar missing" end
-    if sel and #sel > 0 then
-      local files = {}
-      for _, n in ipairs(sel) do files[#files+1] = sh.shq(n) end
-      local cmd = "unrar x -o+ " .. sh.shq(path) .. " " ..
-        table.concat(files, " ") .. " " .. sh.shq(dir .. "/") .. " 2>&1"
-      return sh.exec(cmd) == 0
-    else
-      local cmd = "unrar x -o+ " .. sh.shq(path) .. " " .. sh.shq(dir .. "/") .. " 2>&1"
-      return sh.exec(cmd) == 0
-    end
   elseif kind == "gz" then
     local cmd = "gzip -dk -c " .. sh.shq(path) .. " > " ..
       sh.shq(dir .. "/" .. ((path:match("([^/]+)$") or "file"):gsub("%.gz$", "")))

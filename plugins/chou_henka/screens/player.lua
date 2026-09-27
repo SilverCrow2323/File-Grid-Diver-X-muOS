@@ -11,6 +11,8 @@ local MP      = require("services.media_player")
 local WS      = require("plugins.chou_henka.core.watchstate")
 local Notify  = require("ui.notify")
 
+local function overlay_bottom() return 100 end
+
 local M = {}
 local W, H = 640, 480
 
@@ -416,7 +418,7 @@ local function draw_overlay_panel()
   if not overlay then return end
   local th = T.current()
   local alpha = math.min(1, overlay_t / 0.3)
-  local y0 = H - Frame_or_bottom()
+  local y0 = H - overlay_bottom()
   col({0.02, 0.02, 0.04}, 0.92 * alpha)
   love.graphics.rectangle("fill", 20, y0, W - 40, 72, 5, 5)
   col(th.accent, 0.85 * alpha)
@@ -446,7 +448,6 @@ local function draw_overlay_panel()
   end
 end
 
-function Frame_or_bottom() return 100 end
 
 function M.draw()
   local th = T.current()

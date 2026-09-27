@@ -14,6 +14,7 @@ local TABS = {
   { id="library",    label="LIBRARY" },
   { id="engine",     label="ENGINE" },
   { id="sources",    label="SOURCES" },
+  { id="scraper",    label="SCRAPER" },
   { id="about",      label="ABOUT" },
 }
 local cur_tab, sel, scroll, t = 1, 1, 0, 0

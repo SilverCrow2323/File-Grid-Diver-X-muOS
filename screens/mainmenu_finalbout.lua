@@ -1,6 +1,6 @@
 -- screens/mainmenu_finalbout.lua -- fedele al menu di DB GT: Final Bout (PS1).
--- Layout: sfondo FB, logo in alto, 4 riquadri in basso.
--- Voci: BATTLE / TOURNAMENT / BUILD UP / OPTIONS
+-- Layout: sfondo FB, logo in alto, 4 riquadri in una riga sopra il footer.
+-- Voci: XPLORER / SYSTEM / PLUGINS / OPTIONS
 local A     = require("core.assets")
 local State = require("core.state")
 local Input = require("core.input_map")
@@ -21,10 +21,10 @@ local VERDE= {0.35, 0.90, 0.45}
 local function col(c, a) love.graphics.setColor(c[1], c[2], c[3], a or 1) end
 
 local ITEMS = {
-  { key = "BATTLE",     sub = "file explorer",     target = "filex_home", colour = ORO,  icon = "battle" },
-  { key = "TOURNAMENT", sub = "system cockpit",    target = "device",     colour = CYA,  icon = "tournament" },
-  { key = "PLUGINS",    sub = "extension store",   target = "plugins",    colour = VERDE,icon = "buildup" },
-  { key = "OPTIONS",    sub = "settings",          target = "settings",   colour = RED,  icon = "options" },
+  { key = "XPLORER",  sub = "file explorer",   target = "filex_home", colour = ORO,  icon = "battle" },
+  { key = "SYSTEM",   sub = "system cockpit",  target = "device",     colour = CYA,  icon = "tournament" },
+  { key = "PLUGINS",  sub = "extension store", target = "plugins",    colour = VERDE,icon = "buildup" },
+  { key = "OPTIONS",  sub = "settings",        target = "settings",   colour = RED,  icon = "options" },
 }
 local N = #ITEMS
 
@@ -159,7 +159,7 @@ local function draw_icon(kind, cx, cy, r, c, a)
   love.graphics.setLineWidth(1)
 end
 
--- 4 riquadri in basso
+-- 4 riquadri in una riga sopra il footer
 local function draw_quadrants()
   local qw = 110
   local qh = 110

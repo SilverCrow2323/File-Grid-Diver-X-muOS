@@ -24,6 +24,7 @@ local ExtImg= require("core.external_image")
 
 local S = {}
 local W, H = 640, 480
+local pane_rect
 
 local PAD_L, PAD_R = 8, 8
 local GAP = 6
@@ -1266,7 +1267,7 @@ end
 --  Rect
 -- ============================================================
 local SIDE_W = 260
-function pane_rect(i)
+pane_rect = function(i)
   local shift = S.side_open > 0.01 and SIDE_W * S.side_open or 0
   local preview_w = S.preview and 180 or 0
   local y = Frame.TOP_H + 4

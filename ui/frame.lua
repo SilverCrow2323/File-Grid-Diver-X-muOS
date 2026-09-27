@@ -225,97 +225,236 @@ function F.draw_badge(cx, cy, r, key)
 end
 
 
--- ===== device drawers =====
-local function draw_clock_device(cx, cy, r)
-  plaque_circle(cx, cy, r, 3)
-  love.graphics.setFont(A.font_raw(A.FONT_MONO, 12))
-  love.graphics.setColor(0.55, 0.86, 0.95, 1)
-  local s = read_clock()
-  local w = love.graphics.getFont():getWidth(s)
-  love.graphics.print(s, cx - w/2, cy - 7)
+-- ===== device chips (header right side) =====
+-- Uniform-height chips: dark plaque background, thin colored rim,
+-- small vector icon on the left, value text on the right.
+-- Packed from the right edge with a consistent gap; auto-hidden
+-- when there is no more room (protects the header title/logo).
+
+local DEV_H     = 22
+local DEV_GAP   = 5
+local DEV_PAD   = 8
+local DEV_RIGHT = 10
+local DEV_MIN_X = 200
+
+local DEV_ACC = {
+  clock   = {0.55, 0.86, 0.95},
+  wifi    = {0.48, 0.80, 0.90},
+  battery = {0.55, 0.85, 0.45},
+  mem     = {0.94, 0.66, 0.35},
+  down    = {0.40, 0.95, 0.45},
+}
+
+local function dev_chip_bg(x, y, w, h, acc)
+  love.graphics.setColor(0, 0, 0, 0.85)
+  love.graphics.rectangle("fill", x - 1, y - 1, w + 2, h + 2, 4, 4)
+  love.graphics.setColor(0.055, 0.050, 0.045, 1)
+  love.graphics.rectangle("fill", x, y, w, h, 4, 4)
+  love.graphics.setColor(0.16, 0.15, 0.14, 0.9)
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle("line", x + 1.5, y + 1.5, w - 3, h - 3, 3, 3)
+  love.graphics.setColor(acc[1], acc[2], acc[3], 0.65)
+  love.graphics.rectangle("line", x + 0.5, y + 0.5, w - 1, h - 1, 4, 4)
 end
 
-local function draw_wifi_device(x, y, w, h)
-  plaque_rect(x, y, w, h, 6)
-  local strength = read_wifi() or 0
-  love.graphics.setFont(A.font_raw(A.FONT_BODY_BOLD, 11))
-  if strength > 0 then love.graphics.setColor(0.96,0.96,0.92,1)
-  else                love.graphics.setColor(0.28,0.27,0.24,1) end
-  love.graphics.print("WIFI", x + 8, y + h/2 - 8)
+local function dev_icon_clock(cx, cy, r, acc)
+  love.graphics.setColor(acc[1], acc[2], acc[3], 1)
+  love.graphics.setLineWidth(1.4)
+  love.graphics.circle("line", cx, cy, r)
+  love.graphics.line(cx, cy, cx, cy - r * 0.55)
+  love.graphics.line(cx, cy, cx + r * 0.45, cy + r * 0.25)
+  love.graphics.setLineWidth(1)
+end
 
-  local bx = x + 42; local by = y + h - 8
-  for i = 1, 4 do
-    local bh = 3 + (i - 1) * 11 / 3
+local function dev_icon_wifi(cx, cy, r, acc, strength)
+  love.graphics.setLineWidth(1.6)
+  for i = 1, 3 do
+    local rad = (i / 3) * r
     local on = (i <= strength)
-    local col
-    if on then
-      local t = 1 - (i - 1) / 3
-      col = {0.30 + 0.45 * (1 - t), 0.85 - 0.15 * (1 - t), 0.30}
-    else col = {0.10, 0.10, 0.09} end
-    love.graphics.setColor(col[1], col[2], col[3], 1)
-    love.graphics.rectangle("fill", bx + (i - 1) * 5, by - bh, 3, bh)
+    local a = on and 1 or 0.20
+    love.graphics.setColor(acc[1], acc[2], acc[3], a)
+    love.graphics.arc("line", "open", cx, cy + r * 0.50, rad,
+      -math.pi * 0.80, -math.pi * 0.20)
   end
+  love.graphics.setColor(acc[1], acc[2], acc[3], (strength > 0) and 1 or 0.20)
+  love.graphics.circle("fill", cx, cy + r * 0.50, 1.6)
+  love.graphics.setLineWidth(1)
+end
 
-  local lx, ly = x + w - 8, y + 6
-  if strength > 0 then
-    love.graphics.setColor(0.30, 0.92, 0.40, 0.35); love.graphics.circle("fill", lx, ly, 5)
-    love.graphics.setColor(0.60, 1.0, 0.60, 1);   love.graphics.circle("fill", lx, ly, 2.4)
-  else
-    love.graphics.setColor(0.92, 0.15, 0.10, 0.35); love.graphics.circle("fill", lx, ly, 5)
-    love.graphics.setColor(1.0, 0.30, 0.22, 1);   love.graphics.circle("fill", lx, ly, 2.4)
+local function dev_icon_battery(x, y, w, h, col, pct)
+  love.graphics.setColor(col[1], col[2], col[3], 0.9)
+  love.graphics.setLineWidth(1.3)
+  love.graphics.rectangle("line", x, y, w, h, 2, 2)
+  love.graphics.rectangle("fill", x + w, y + h * 0.30, 2, h * 0.40, 1, 1)
+  local fw = (w - 3) * math.max(0, math.min(1, pct))
+  if fw > 0.5 then
+    love.graphics.rectangle("fill", x + 1.5, y + 1.5, fw, h - 3, 1, 1)
+  end
+  love.graphics.setLineWidth(1)
+end
+
+local function dev_icon_mem(x, y, w, h, col, pct)
+  local n = 3
+  local gap = 1
+  local bh = (h - (n - 1) * gap) / n
+  local filled = math.floor(pct * n + 0.5)
+  for i = 1, n do
+    local by = y + (n - i) * (bh + gap)
+    local on = (i <= filled)
+    love.graphics.setColor(col[1], col[2], col[3], on and 1 or 0.20)
+    love.graphics.rectangle("fill", x, by, w, bh, 1, 1)
   end
 end
 
-local function draw_battery_device(x, y, w, h)
-  plaque_rect(x, y, w, h, 6)
-  love.graphics.setFont(A.font_raw(A.FONT_BODY_BOLD, 11))
-  love.graphics.setColor(0.92, 0.92, 0.88, 1)
-  love.graphics.print("BATT", x + 8, y + h/2 - 8)
+-- ===== device chip drawers =====
+local function draw_clock_chip(x, y, w, h)
+  local acc = DEV_ACC.clock
+  dev_chip_bg(x, y, w, h, acc)
+  local cy = y + h / 2
+  dev_icon_clock(x + DEV_PAD + 6, cy, 6, acc)
+  local font = A.font_raw(A.FONT_MONO, 11)
+  love.graphics.setFont(font)
+  love.graphics.setColor(0.92, 0.96, 1, 1)
+  love.graphics.print(read_clock(), x + DEV_PAD + 16,
+    cy - font:getHeight() / 2)
+end
 
+local function draw_wifi_chip(x, y, w, h)
+  local acc = DEV_ACC.wifi
+  dev_chip_bg(x, y, w, h, acc)
+  local cy = y + h / 2
+  local strength = read_wifi() or 0
+  dev_icon_wifi(x + DEV_PAD + 8, cy, 9, acc, strength)
+  local font = A.font_raw(A.FONT_MONO, 11)
+  love.graphics.setFont(font)
+  love.graphics.setColor(0.92, 0.96, 1, 1)
+  local label = (strength > 0) and "WIFI" or "----"
+  love.graphics.print(label, x + DEV_PAD + 22, cy - font:getHeight() / 2)
+end
+
+local function draw_battery_chip(x, y, w, h)
+  local acc = DEV_ACC.battery
+  dev_chip_bg(x, y, w, h, acc)
+  local cy = y + h / 2
+  local font = A.font_raw(A.FONT_MONO, 11)
+  love.graphics.setFont(font)
   local pct = read_battery()
-  if not pct then
-    love.graphics.setColor(0.35, 0.33, 0.30, 1)
-    love.graphics.print("--", x + w - 26, y + h/2 - 6)
+  if pct == nil then
+    dev_icon_battery(x + DEV_PAD, cy - 5, 16, 10, acc, 0)
+    love.graphics.setColor(0.55, 0.55, 0.55, 0.9)
+    love.graphics.print("--%", x + DEV_PAD + 22, cy - font:getHeight() / 2)
     return
   end
-  local bx, by = x + 42, y + h/2 - 6
-  love.graphics.setColor(0.75, 0.74, 0.70, 1)
-  love.graphics.setLineWidth(1.3)
-  love.graphics.rectangle("line", bx, by, 22, 12, 2, 2)
-  love.graphics.rectangle("fill", bx + 23, by + 3, 2, 6)
-  love.graphics.setLineWidth(1)
-  local col = pct > 55 and {0.35,0.85,0.40}
-          or (pct > 20 and {0.95,0.72,0.25} or {0.95,0.28,0.22})
-  local fw = 19 * (math.max(0, math.min(100, pct)) / 100)
-  love.graphics.setColor(col[1], col[2], col[3], 1)
-  love.graphics.rectangle("fill", bx + 1.5, by + 1.5, fw, 9, 1, 1)
-  love.graphics.setFont(A.font_raw(A.FONT_MONO, 10))
-  love.graphics.print(string.format("%d%%", pct), bx + 28, by)
+  local v = math.max(0, math.min(100, pct)) / 100
+  local col = (pct > 55 and {0.55, 0.85, 0.45})
+           or (pct > 20 and {0.95, 0.72, 0.25})
+           or {0.95, 0.28, 0.22}
+  dev_icon_battery(x + DEV_PAD, cy - 5, 16, 10, col, v)
+  love.graphics.setColor(0.92, 0.96, 1, 1)
+  love.graphics.print(string.format("%d%%", pct),
+    x + DEV_PAD + 22, cy - font:getHeight() / 2)
 end
 
-local function draw_mem_device(x, y, w, h)
-  plaque_rect(x, y, w, h, 6)
-  love.graphics.setFont(A.font_raw(A.FONT_BODY_BOLD, 11))
-  love.graphics.setColor(0.92, 0.92, 0.88, 1)
-  love.graphics.print("MEM", x + 8, y + h/2 - 8)
+local function draw_mem_chip(x, y, w, h)
+  local acc = DEV_ACC.mem
+  dev_chip_bg(x, y, w, h, acc)
+  local cy = y + h / 2
+  local font = A.font_raw(A.FONT_MONO, 11)
+  love.graphics.setFont(font)
   local pct = read_mem_pct()
-  if not pct then
-    love.graphics.setColor(0.35, 0.33, 0.30, 1)
-    love.graphics.print("--", x + w - 26, y + h/2 - 6)
+  if pct == nil then
+    dev_icon_mem(x + DEV_PAD, cy - 6, 16, 12, acc, 0)
+    love.graphics.setColor(0.55, 0.55, 0.55, 0.9)
+    love.graphics.print("MEM --%", x + DEV_PAD + 22, cy - font:getHeight() / 2)
     return
   end
-  local bx, by = x + 42, y + h/2 - 6
-  love.graphics.setColor(0.75, 0.74, 0.70, 1)
-  love.graphics.setLineWidth(1.3)
-  love.graphics.rectangle("line", bx, by, 22, 12, 2, 2)
+  local v = math.max(0, math.min(100, pct)) / 100
+  local col = (pct < 50 and {0.55, 0.85, 0.45})
+           or (pct < 75 and {0.95, 0.72, 0.25})
+           or {0.95, 0.28, 0.22}
+  dev_icon_mem(x + DEV_PAD, cy - 6, 16, 12, col, v)
+  love.graphics.setColor(0.92, 0.96, 1, 1)
+  love.graphics.print(string.format("MEM %d%%", pct),
+    x + DEV_PAD + 22, cy - font:getHeight() / 2)
+end
+
+local function draw_down_chip(x, y, w, h, count)
+  local acc = DEV_ACC.down
+  dev_chip_bg(x, y, w, h, acc)
+  local cy = y + h / 2
+  -- freccia giu' stilizzata
+  love.graphics.setColor(acc[1], acc[2], acc[3], 1)
+  love.graphics.setLineWidth(1.6)
+  love.graphics.line(x + DEV_PAD + 6, cy - 5, x + DEV_PAD + 6, cy + 3)
+  love.graphics.line(x + DEV_PAD + 2, cy - 1, x + DEV_PAD + 6, cy + 3)
+  love.graphics.line(x + DEV_PAD + 10, cy - 1, x + DEV_PAD + 6, cy + 3)
   love.graphics.setLineWidth(1)
-  local col = pct < 50 and {0.35,0.85,0.40}
-          or (pct < 75 and {0.95,0.72,0.25} or {0.95,0.28,0.22})
-  love.graphics.setColor(col[1], col[2], col[3], 1)
-  love.graphics.rectangle("fill", bx + 1.5, by + 1.5,
-    19 * math.min(1, pct / 100), 9, 1, 1)
-  love.graphics.setFont(A.font_raw(A.FONT_MONO, 10))
-  love.graphics.print(string.format("%d%%", pct), bx + 28, by)
+  local font = A.font_raw(A.FONT_MONO, 11)
+  love.graphics.setFont(font)
+  love.graphics.setColor(0.92, 0.96, 1, 1)
+  love.graphics.print("DL " .. tostring(count),
+    x + DEV_PAD + 16, cy - font:getHeight() / 2)
+end
+
+-- ===== device chips layout =====
+-- Ritorna la x del bordo sinistro dell'ultimo chip disegnato (o nil).
+local function draw_device_chips(W, H)
+  local chip_h = DEV_H
+  local chip_y = math.floor((H - chip_h) / 2)
+  local font_chip = A.font_raw(A.FONT_MONO, 11)
+
+  -- Calcola i testi correnti per determinare le larghezze
+  local clock_str = read_clock()
+  local wifi_on   = (read_wifi() or 0) > 0
+  local wifi_str  = wifi_on and "WIFI" or "----"
+  local bat       = read_battery()
+  local bat_str   = bat and string.format("%d%%", bat) or "--%"
+  local mem       = read_mem_pct()
+  local mem_str   = mem and string.format("MEM %d%%", mem) or "MEM --%"
+
+  local clock_w = DEV_PAD * 2 + 16 + font_chip:getWidth(clock_str)
+  local wifi_w  = DEV_PAD * 2 + 22 + font_chip:getWidth(wifi_str)
+  local batt_w  = DEV_PAD * 2 + 22 + font_chip:getWidth(bat_str)
+  local mem_w   = DEV_PAD * 2 + 22 + font_chip:getWidth(mem_str)
+
+  -- Download attivo?
+  local dl_count = 0
+  do
+    local ok, DL = pcall(require, "services.downloader")
+    if ok and DL and DL.active_count then
+      dl_count = DL.active_count() or 0
+    end
+  end
+  local down_w = 0
+  if dl_count > 0 then
+    local dl_label = "DL " .. tostring(dl_count)
+    down_w = DEV_PAD * 2 + 16 + font_chip:getWidth(dl_label)
+  end
+
+  local cx = W - DEV_RIGHT
+  local leftmost = nil
+
+  local function try(draw, w)
+    if (cx - w) < DEV_MIN_X then return false end
+    draw(cx - w, chip_y, w, chip_h)
+    leftmost = cx - w
+    cx = cx - w - DEV_GAP
+    return true
+  end
+
+  -- Packing da destra verso sinistra
+  if ui_flag("show_clock", true)   ~= false then try(draw_clock_chip,   clock_w) end
+  if ui_flag("show_wifi", true)    ~= false then try(draw_wifi_chip,    wifi_w)  end
+  if ui_flag("show_battery", true) ~= false then try(draw_battery_chip, batt_w)  end
+  if ui_flag("show_mem", true)     ~= false then try(draw_mem_chip,     mem_w)   end
+  if dl_count > 0 then
+    -- Il chip download è sempre a sinistra degli altri, ma va disegnato
+    -- dopo: usa una funzione anonima per passargli il conteggio.
+    local function draw_dl(x, y, w, h) draw_down_chip(x, y, w, h, dl_count) end
+    try(draw_dl, down_w)
+  end
+
+  return leftmost
 end
 
 -- ===== public =====
@@ -462,38 +601,14 @@ function F.draw_top(title, sub)
     end
   end
 
-  -- right cluster: clock / wifi / battery / mem (respect toggles)
-  local cy      = H / 2
-  local clock_r = math.floor(H * 0.36)
-  local cursor_x = W - 12
+  -- right cluster: uniform device chips, packed from right edge.
+  -- Ritorna la x del bordo sinistro dell'ultimo chip (per il download pill).
+  local chips_left = draw_device_chips(W, H)
 
-  if ui_flag("show_clock", true) ~= false then
-    local clock_x = W - clock_r - 12
-    draw_clock_device(clock_x, cy, clock_r)
-    cursor_x = clock_x - clock_r - 10
-  end
-
-  local dev_h = math.floor(H * 0.58)
-  local dev_w = math.floor(dev_h * 2.8)
-  local dev_y = cy - dev_h / 2
-
-  if ui_flag("show_wifi", true) ~= false and (cursor_x - dev_w) > 200 then
-    draw_wifi_device(cursor_x - dev_w, dev_y, dev_w, dev_h)
-    cursor_x = cursor_x - dev_w - 8
-  end
-
-  if ui_flag("show_battery", true) ~= false and (cursor_x - dev_w) > 200 then
-    draw_battery_device(cursor_x - dev_w, dev_y, dev_w, dev_h)
-    cursor_x = cursor_x - dev_w - 8
-  end
-
-  if ui_flag("show_mem", true) ~= false and (cursor_x - dev_w) > 200 then
-    draw_mem_device(cursor_x - dev_w, dev_y, dev_w, dev_h)
-    cursor_x = cursor_x - dev_w - 8
-  end
-
-  -- download indicator pill
-  if ui_flag("show_download", true) ~= false then
+  -- download indicator: legacy pill, lasciato in posizione storica
+  -- come fallback per non rompere il codice esistente. Il chip "DL"
+  -- all'interno di draw_device_chips() e' la visualizzazione principale.
+  if ui_flag("show_download", true) ~= false and not chips_left then
     draw_download_indicator(W, H, th)
   end
 end
