@@ -54,6 +54,7 @@ releases/
 *.old
 *.broken
 *.fgd.bak
+*.fgdx_bak
 *.log
 
 # Librerie native / wheel pesanti
