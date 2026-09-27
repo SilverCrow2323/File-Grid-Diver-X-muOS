@@ -400,8 +400,8 @@ local function open_file_entry(r)
     State.library_path = r.path
     State.go("gdx_library")
   elseif kind == "audio" or kind == "video" then
-    State.chou_henka_path = r.path
-    State.go("chou_henka")
+    State.grid_player_path = r.path
+    State.go("grid_player")
   else
     Notify.show("info", "no handler for " .. (ext ~= "" and ext or kind))
   end

@@ -77,6 +77,7 @@ local SCREENS = {
   video_player  = require("screens.video_player"),
   about_fb      = require("screens.about_fb"),
   about_fb_game = require("screens.about_fb_game"),
+  grid_player   = require("screens.grid_player"),
 }
 
 -- Plugins: dynamic screens registered by the loader
@@ -486,7 +487,9 @@ end
 -- ------------------------------------------------------------
 local function modal_open()
   local ok, M = pcall(require, "ui.modal")
-  if ok and M and M.current then return true end
+  if not ok or not M then return false end
+  if M.is_open then return M.is_open() == true end
+  if M.current then return true end
   return false
 end
 
@@ -507,6 +510,13 @@ end
 -- ------------------------------------------------------------
 dispatch_pad_no_dedup = function(name)
   if not name then return end
+
+  -- Grace period: gli eventi di auto-repeat / stick non devono
+  -- riversarsi nella schermata nuova subito dopo un cambio.
+  if State._screen_enter_t
+     and (love.timer.getTime() - State._screen_enter_t) < 0.20 then
+    return
+  end
 
   -- Modal absorbs A/B
   if modal_open() then
@@ -745,7 +755,16 @@ function love.load()
   -- Avvio in background di catalog refresh + app version check.
   do
     local Cat = require("services.catalog")
-    State.app_version = "v1.5.0"  -- aggiorna qui o leggi da version.txt
+    -- Legge version.txt (una riga), fallback a v1.5.0
+    State.app_version = State.app_version or "v1.5.0"
+    do
+      local vf = io.open("version.txt", "r")
+      if vf then
+        local v = (vf:read("*l") or ""):gsub("%s+", "")
+        vf:close()
+        if v ~= "" then State.app_version = v end
+      end
+    end
     if Cat.refresh_on_boot then Cat.refresh_on_boot() end
     if Cat.check_app_version_async then
       Cat.check_app_version_async(State.app_version)

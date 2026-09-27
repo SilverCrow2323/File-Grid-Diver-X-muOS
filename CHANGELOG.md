@@ -7,6 +7,29 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-09-26
+
+### Added
+- Release pacchettizzata `releases/v1.5.2/` (base + full).
+  - `File-GD-X-v1.5.2.muxapp` (base, senza PyMuPDF)
+  - `File-GD-X-v1.5.2-full.muxapp` (con PyMuPDF)
+- `version.txt` in root letto all'avvio da `main.lua`.
+
+### Fixed
+- **GRiD-Dev / MASCOT tab** — forward reference a `mascot_options` e `MASCOT_VARIANTS` causava un crash al primo ciclo dell'enum. La preview dello sprite e l'avatar small_portrait non comparivano.
+- **Settings** — `ensure_selectable` veniva chiamata in `S.enter` prima della sua definizione `local`, causando un crash all'apertura della schermata.
+- **Unlock overlay (variante AUDIO)** — nome file BGM errato (`fb/fbbgm2.` con punto finale): il brano non partiva.
+- **`services/trash.lua`** — `_size_cache` era assegnata come globale dentro `M.move()` anziché invalidare la locale; la dimensione totale del cestino restava quella pre-move fino alla scadenza TTL.
+- **`main.lua`** — `modal_open()` ora delega a `ui.modal.is_open()` per coerenza con l'animazione di chiusura.
+- **`main.lua`** — l'auto-repeat del d-pad e lo stick analogico rispettano il grace period post cambio schermata (`State._screen_enter_t`).
+- **`services/fs.lua`** — `M.trash()` ritorna anche il messaggio di errore invece di `nil` secco.
+
+### Removed
+- Asset Final Bout non referenziati (SFX combattimento DBGT, sprite small_portraits/sprites parziali, immagini titles/title1..3, sirpips.png, coveraltus, screen2, art.png, back.png).
+- SFX non usati (`minorutech_muos_boot.ogg`, `bgmbuildup.ogg`, `bgmcharacterselectmp3`, `fbbgm3.ogg`, `back2fb.ogg`, `confirm.ogg`).
+- Directory `.local_bak_*` e file `.bak_*`, `.fgdx_bak`, `.fgd.bak`.
+
+
 ## [1.4.0] - 2026-09-22
 
 ### Added

@@ -179,12 +179,14 @@ end
 -- Move to trash via services/trash (per-volume .fgd_trash).
 -- Kept here for backward compatibility; delegates to the real module.
 function M.trash(path)
-  if not path or path == "" then return nil end
+  if not path or path == "" then return nil, "no path" end
   local ok, T = pcall(require, "services.trash")
-  if not ok or not T or not T.move then return nil end
+  if not ok or not T or not T.move then
+    return nil, "trash service unavailable"
+  end
   local success, stored = T.move(path)
   if success then return stored end
-  return nil
+  return nil, stored or "trash failed"
 end
 
 -- ── Read / write ────────────────────────────────────────────

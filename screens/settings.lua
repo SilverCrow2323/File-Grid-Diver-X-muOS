@@ -15,6 +15,9 @@ S.reserve_select = true
 S.escape_passthrough = true
 local W, H = 640, 480
 
+-- Forward decl (usata da S.enter prima della sua definizione)
+local ensure_selectable
+
 local AMB={0.94,0.66,0.35}
 local CYA={0.48,0.80,0.90}
 local GRN={0.55,0.85,0.45}
@@ -343,7 +346,7 @@ local function is_header_idx(i)
   return r and r.kind == "header"
 end
 
-local function ensure_selectable(dir)
+ensure_selectable = function(dir)
   dir = dir or 1
   local n = #cur_rows()
   if n == 0 then sel = 1; return end

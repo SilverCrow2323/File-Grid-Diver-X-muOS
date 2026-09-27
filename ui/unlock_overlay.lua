@@ -36,7 +36,7 @@ local CONFIGS = {
     line1       = "The arena sings.",
     line2       = "All SFX now play in FB mode.",
     sting       = "finalbout",
-    bgm         = "fb/fbbgm2.",
+    bgm         = "fb/fbbgm2",
     fade_out    = false,
   },
   both = {

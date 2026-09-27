@@ -152,13 +152,13 @@ All the single-pane shortcuts apply to whichever pane has focus.
 3. If you cloned this repo, use the bundled helper:
 
    ```sh
-   ./prepare_sd.sh /media/<your-user>/<SD-LABEL>
+   ./mux_launch.sh /media/<your-user>/<SD-LABEL>
    ```
 
    Or, to produce a portable tarball to move manually:
 
    ```sh
-   ./prepare_sd.sh --pack
+   ./mux_launch.sh
    ```
 
 4. Eject the SD card cleanly, insert it into the RG35XX H, boot muOS,
@@ -292,7 +292,7 @@ File-GD X/
 ├── conf.lua                LÖVE config + global error handler
 ├── mux_launch.sh           muOS launcher
 ├── deploy_desktop.sh       desktop launcher with logging
-├── prepare_sd.sh           SD card staging helper
+├── mux_launch.sh           SD card staging helper
 ├── README.md
 ├── LICENSE
 │

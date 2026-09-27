@@ -17,6 +17,12 @@ local M  = {}
 
 local FALLBACK_TRASH = "data/trash"
 
+-- Cache dimensione trash. Dichiarata qui per evitare che M.move()
+-- più sotto crei una variabile globale omonima.
+local _size_cache = nil
+local _size_cache_t = 0
+local SIZE_TTL = 3.0
+
 -- ----------------------------------------------------------------
 --  Mount detection
 -- ----------------------------------------------------------------
@@ -232,9 +238,8 @@ function M.purge_index(i)
 end
 
 -- Total footprint across all volumes.
-local _size_cache = nil
-local _size_cache_t = 0
-local SIZE_TTL = 3.0
+-- (dichiarata in cima al file, PRIMA di M.move, così le assegnazioni
+--  in M.move non creano per errore una variabile globale)
 
 function M.size()
   local now = (love and love.timer and love.timer.getTime()) or os.time()

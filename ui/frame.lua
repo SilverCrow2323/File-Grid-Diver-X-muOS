@@ -48,6 +48,8 @@ local TITLES = {
   settings = "SETTINGS", log = "LOG", about = "ABOUT",
   about_fb = "ABOUT FINAL BOUT",
   about_fb_game = "ON THE 'FINAL BOUT'",
+  chou_henka  = "CHOU HENKA MEDIA CENTER",
+  grid_player = "GRi▶ PLAYER",
   pad_test = "PAD TEST", operations = "OPERATIONS",
   disk_tools = "DISK TOOLS", device = "SYSTEM",
   plugins = "PLUGINS", input_investigation = "INPUT HOLMES",

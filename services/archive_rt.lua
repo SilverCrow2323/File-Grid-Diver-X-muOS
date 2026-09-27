@@ -165,25 +165,6 @@ function M.list(path)
       if out then return parse_7z(out) end
     end
     return nil, "no rar tool available"
-  elseif kind == "rar" then
-    -- .rar / .cbr: prova unrar prima, 7z come fallback
-    if tool_available("unrar") then
-      local out = sh.read("unrar lb -c- " .. sh.shq(path) .. " 2>/dev/null")
-      if out then
-        local entries = {}
-        for line in out:gmatch("[^\n]+") do
-          if line ~= "" then
-            entries[#entries+1] = { name = line, is_dir = false, size = 0, raw_name = line }
-          end
-        end
-        if #entries > 0 then return entries end
-      end
-    end
-    if tool_available("7z") then
-      local out = sh.read("7z l -slt " .. sh.shq(path) .. " 2>/dev/null")
-      if out then return parse_7z(out) end
-    end
-    return nil, "no rar tool"
   elseif kind == "gz" then
     -- gz is single-file
     return { { name = (path:match("([^/]+)$") or "file"):gsub("%.gz$", ""),

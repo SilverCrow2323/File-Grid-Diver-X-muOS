@@ -112,6 +112,17 @@ end
 -- ============================================================
 --  Tabs
 -- ============================================================
+-- Forward declarations for closures used inside TABS.
+-- mascot_options and MASCOT_VARIANTS are defined further down,
+-- but the closures in TABS reference them, so they must be visible
+-- as upvalues at parse time (otherwise they compile as globals).
+local mascot_options
+local MASCOT_VARIANTS
+
+-- Forward declarations for closures used inside TABS.
+local mascot_options
+local MASCOT_VARIANTS
+
 local TABS = {
   { id="perf", label="PERFORMANCE", accent=AMB, rows={
     enu("Frame rate cap", "FPS limit",
@@ -264,7 +275,7 @@ local SPEED_MAP = { very_slow=0.7, slow=1.0, normal=1.4, fast=2.0, wild=3.0 }
 --   nil        -> always available
 --   "fb_view"  -> requires State.fb_view_used
 --   "fb_audio" -> requires State.fb_audio_used
-local MASCOT_VARIANTS = {
+MASCOT_VARIANTS = {
   goku = {
     left     = "assets/images/fb/sprites/goku.png",
     right    = "assets/images/fb/sprites/goku.png",
@@ -305,7 +316,7 @@ local function mascot_available(name)
   return false
 end
 
-local function mascot_options()
+mascot_options = function()
   local opts = {}
   for _, name in ipairs(MASCOT_ORDER) do
     if mascot_available(name) then opts[#opts + 1] = name end
@@ -695,21 +706,28 @@ local function draw_mascot_preview(x, y, w, h, focused)
   col(accent, 0.7)
   love.graphics.print("Goku SSJ4 sprite", x + 14, y + 26)
 
-  -- preview the sprite
-  ensure_mascot(get_active_mascot())
+  -- preview the sprite (use the value returned by ensure_mascot)
+  local preview_entry = ensure_mascot(get_active_mascot())
   local side = goku_get("side", "left")
-  local entry = (side == "left") and mascot.img_l or mascot.img_r
-  entry = entry or mascot.img_l or mascot.img_r
+  local preview_img
+  if preview_entry then
+    if side == "left" then
+      preview_img = preview_entry.img_l or preview_entry.img_r
+    else
+      preview_img = preview_entry.img_r or preview_entry.img_l
+    end
+  end
   local px_cx = x + w - 100
   local px_cy = y + h / 2
-  if entry then
+  if preview_img then
+    local iw, ih = preview_img:getDimensions()
     local target_h = math.min(h - 20, 90)
-    local sc = target_h / entry.h
-    local dw = entry.w * sc
-    local dh = entry.h * sc
+    local sc = target_h / ih
+    local dw = iw * sc
+    local dh = ih * sc
     local float_y = math.sin(mascot.phase) * 4
     col({1,1,1}, 1)
-    love.graphics.draw(entry.img, px_cx - dw/2, px_cy - dh/2 + float_y, 0, sc, sc)
+    love.graphics.draw(preview_img, px_cx - dw/2, px_cy - dh/2 + float_y, 0, sc, sc)
     col({1,1,1}, 1)
   else
     -- fallback

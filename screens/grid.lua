@@ -632,8 +632,8 @@ local function open_file()
     State.go("office_rt")
 
   elseif kind == "audio" or kind == "video" then
-    State.chou_henka_path = e.path
-    State.go("chou_henka")
+    State.grid_player_path = e.path
+    State.go("grid_player")
   else
     Notify.show("info", "no handler for " .. basename(e.path or "?"))
   end

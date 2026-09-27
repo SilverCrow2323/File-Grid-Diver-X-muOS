@@ -149,7 +149,6 @@ function S.pad(b)
     return
   end
   if export_job then return end
-  if export_job then return end
   if     b == Input.B or b == Input.SELECT then State.back()
   elseif b == Input.LEFT  then skip(-1)
   elseif b == Input.RIGHT then skip(1)
@@ -276,19 +275,6 @@ function S.draw()
       pct_t * 100), 0, H - Frame.BOTTOM_H - 60, W, "center")
   end
 
-  -- Export progress indicator
-  if export_job then
-    local pct_t = math.min(1, export_job.t / math.max(1, export_job.duration / 2))
-    local bw = W - 100
-    col({0.06, 0.06, 0.10}, 1)
-    love.graphics.rectangle("fill", 50, H - Frame.BOTTOM_H - 40, bw, 10, 5, 5)
-    col(acc, 0.9)
-    love.graphics.rectangle("fill", 51, H - Frame.BOTTOM_H - 39, (bw - 2) * pct_t, 8, 4, 4)
-    love.graphics.setFont(A.font(A.FONT_MONO, 10))
-    col(acc, 1)
-    love.graphics.printf(string.format("EXPORTING  %.0f%%  (ffmpeg)",
-      pct_t * 100), 0, H - Frame.BOTTOM_H - 60, W, "center")
-  end
 
   Frame.draw_top("FGD", "plugins")
   Frame.draw_bottom({

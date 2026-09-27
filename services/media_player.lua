@@ -97,8 +97,19 @@ end
 -- Get a property (returns number, boolean, string or nil)
 function M.get_property(name)
   local raw = M.send("get_property", name)
-  if not raw then return nil end
-  -- mpv replies with {"data": <value>, "error": "success"}
+  if not raw or raw == "" then return nil end
+
+  -- Try JSON decode first (handles arrays/objects like track-list)
+  local ok, decoded = pcall(function()
+    return require("core.json").decode(raw)
+  end)
+  if ok and type(decoded) == "table" then
+    local v = decoded.data
+    if v == nil or v == "null" then return nil end
+    return v
+  end
+
+  -- Fallback: regex for scalars
   local _, data = raw:match('"data":(%s*[^,}]+)')
   if not data then return nil end
   data = data:gsub("^%s+", ""):gsub("%s+$", "")
@@ -110,6 +121,53 @@ function M.get_property(name)
   local s = data:match('^"(.*)"$')
   if s then return s end
   return data
+end
+
+function M.get_track_list()
+  return M.get_property("track-list") or {}
+end
+
+function M.set_audio_track(id)
+  if id == nil then return end
+  M.send("set_property", "aid", id)
+end
+
+function M.set_sub_track(id)
+  if id == nil then return end
+  M.send("set_property", "sid", id)
+end
+
+function M.get_audio_track()
+  local v = M.get_property("aid")
+  if v == nil or v == false then return nil end
+  if type(v) == "number" then return v end
+  if tostring(v) == "no" or tostring(v) == "auto" then return tostring(v) end
+  return tonumber(v)
+end
+
+function M.get_sub_track()
+  local v = M.get_property("sid")
+  if v == nil or v == false then return nil end
+  if type(v) == "number" then return v end
+  if tostring(v) == "no" or tostring(v) == "auto" then return tostring(v) end
+  return tonumber(v)
+end
+
+function M.get_media_info()
+  local info = {}
+  info.width        = M.get_property("width")
+  info.height       = M.get_property("height")
+  info.fps          = M.get_property("container-fps")
+  info.video_codec  = M.get_property("video-codec")
+  info.video_format = M.get_property("video-format")
+  info.audio_codec  = M.get_property("audio-codec-name")
+  info.audio_rate   = M.get_property("audio-params/samplerate")
+  info.audio_ch     = M.get_property("audio-params/channel-count")
+  info.bitrate      = M.get_property("demuxer-bitrate")
+  info.file_format  = M.get_property("file-format")
+  info.video_bitrate= M.get_property("video-bitrate")
+  info.audio_bitrate= M.get_property("audio-bitrate")
+  return info
 end
 
 function M.set_property(name, value)
