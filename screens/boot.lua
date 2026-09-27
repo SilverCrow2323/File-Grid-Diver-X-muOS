@@ -28,6 +28,11 @@ end
 local function finish()
   if finished then return end
   finished = true
+  if S._fb_startup then
+    local ok, SFX = pcall(require, "core.audio")
+    if ok and SFX.fade_bgm then SFX.fade_bgm(1.2) end
+    S._fb_startup = nil
+  end
   State.booted = true
   State.go("mainmenu")
 end
@@ -36,6 +41,18 @@ function S.enter()
   t = 0
   skipped = false
   finished = false
+
+  local okS, Store = pcall(require, "core.settings_store")
+  local State = require("core.state")
+  if okS and State.fb_view_used
+     and Store.get("ui", "mainmenu_view") == "finalbout" then
+    local ok, SFX = pcall(require, "core.audio")
+    if ok and SFX.play_bgm then
+      SFX.play_bgm("fb/fbbgm0", 0.85)
+      S._fb_startup = true
+    end
+  end
+
   local ok, SFX = pcall(require, "core.audio")
   if ok then SFX.play("boot") end
 end
@@ -205,16 +222,22 @@ end
 function S.draw()
   do
     local ok, FBBG = pcall(require, "ui.fb_background")
-    if ok and FBBG.draw("startup") then
-      local t = love.timer.getTime()
-      local a = 0.6 + 0.4 * math.sin(t * 3)
-      love.graphics.setColor(1, 0.9, 0.3, a)
-      love.graphics.setFont(A.font(A.FONT_TITLE, 28))
-      love.graphics.printf("PRESS START", 0, 380, W, "center")
-      love.graphics.setColor(1, 1, 1, 1)
-      D.scanlines(W, H, 0.10)
-      D.vignette(W, H, 0.65)
-      return
+    if ok then
+      local fade_in  = math.min(1, t / 0.5)
+      local fade_out = math.min(1, (TOTAL - t) / 0.5)
+      local fade_alpha = math.max(0, math.min(fade_in, fade_out))
+      if FBBG.draw("startup", fade_alpha) then
+        local now = love.timer.getTime()
+        local pulse = 0.6 + 0.4 * math.sin(now * 3)
+        love.graphics.setColor(1, 0.9, 0.3, pulse * fade_alpha)
+        love.graphics.setFont(A.font(A.FONT_TITLE, 28))
+        -- PRESS START più a sinistra
+        love.graphics.printf("PRESS START", 0, 380, W * 0.6, "center")
+        love.graphics.setColor(1, 1, 1, 1)
+        D.scanlines(W, H, 0.10)
+        D.vignette(W, H, 0.65)
+        return
+      end
     end
   end
   draw_bg()

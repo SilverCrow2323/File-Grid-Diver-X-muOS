@@ -70,3 +70,4 @@ Thumbs.db
 # Bundle PyMuPDF (FULL release) — non va su GitHub
 plugins/pdf_lib/
 __pycache__/*.pyc
+.local_bak_*/
