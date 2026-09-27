@@ -136,18 +136,25 @@ local TABS = {
         end),
 
       { kind = "header", label = "VIEWS" },
-      enu("File manager view", "file manager default",
-        "general", "view", {"list","grid","compact","details"}, "list"),
       enu("Main hub view", "main menu style",
         "ui", "mainmenu_view",
         {"console","hud","rez"}, "console"),
-      tog("Dual panel", "two side-by-side directories",
-        "general", "dual", false),
     }
   end },
 
   { id="browser", label="BROWSER", accent=CYA, rows=function()
     return {
+      { kind = "header", label = "VIEW" },
+      enu("File manager view", "file manager default",
+        "general", "view", {"list","grid","compact","details"}, "list"),
+      enu("Icon set", "file icon style",
+        "ui", "icon_set", {"classic","minimal","square","neon"}, "classic",
+        function() require("ui.file_icons").reload_style() end),
+      tog("Dual panel", "two side-by-side directories",
+        "general", "dual", false),
+      tog("Multi-select", "allow marking multiple files at once",
+        "general", "multi_select", true),
+
       { kind = "header", label = "SORTING" },
       enu("Default sort", "file sorting",
         "sort", "key", {"name","size","date","type"}, "name"),

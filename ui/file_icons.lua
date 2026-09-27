@@ -408,4 +408,82 @@ function F.color_for(spec)
   return COLORS[spec.cat] or COLORS.unknown
 end
 
+-- ============================================================
+--  Icon set / style dispatch
+-- ============================================================
+F._style = "classic"
+
+local function load_style()
+  local ok, Store = pcall(require, "core.settings_store")
+  if not ok or not Store then return end
+  local s = Store.get("ui", "icon_set")
+  if type(s) == "string" and s ~= "" then F._style = s end
+end
+
+function F.set_style(s)
+  if type(s) == "string" and s ~= "" then F._style = s end
+end
+
+function F.reload_style()
+  load_style()
+end
+
+function F.get_style()
+  return F._style
+end
+
+-- Background variants
+local function bg_none(cx, cy, r, col, a)
+  -- no background
+end
+
+local function bg_square(cx, cy, r, col, a)
+  local s = r * 1.75
+  love.graphics.setColor(col[1], col[2], col[3], (a or 1) * 0.20)
+  love.graphics.rectangle("fill", cx - s/2, cy - s/2, s, s, 3, 3)
+  love.graphics.setColor(col[1], col[2], col[3], a or 1)
+  love.graphics.setLineWidth(1.4)
+  love.graphics.rectangle("line", cx - s/2, cy - s/2, s, s, 3, 3)
+  love.graphics.setLineWidth(1)
+end
+
+local function bg_glow(cx, cy, r, col, a)
+  for i = 4, 1, -1 do
+    love.graphics.setColor(col[1], col[2], col[3], (a or 1) * 0.10 / i)
+    love.graphics.circle("fill", cx, cy, r * (1 + i * 0.25))
+  end
+  hex_disc(cx, cy, r, col, a)
+end
+
+local BG = {
+  classic = hex_disc,
+  minimal = bg_none,
+  square  = bg_square,
+  neon    = bg_glow,
+}
+
+local SHAPE_SCALE = {
+  classic = 1.0,
+  minimal = 1.15,
+  square  = 0.85,
+  neon    = 1.0,
+}
+
+-- Override F.draw with style dispatch
+local _orig_draw_shape = draw_shape
+local function draw_shape_scaled(shape, cx, cy, r, col, a)
+  local sc = SHAPE_SCALE[F._style] or 1.0
+  return _orig_draw_shape(shape, cx, cy, r * sc, col, a)
+end
+
+function F.draw(spec, cx, cy, r, alpha)
+  if not spec then spec = { cat = "unknown", shape = "unknown" } end
+  local col = COLORS[spec.cat] or COLORS.unknown
+  local bg = BG[F._style] or hex_disc
+  bg(cx, cy, r, col, alpha)
+  draw_shape_scaled(spec.shape, cx, cy, r, col, alpha)
+end
+
+load_style()
+
 return F

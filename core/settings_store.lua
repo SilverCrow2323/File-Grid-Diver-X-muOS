@@ -10,6 +10,7 @@ S.defaults = {
     show_hidden = false,
     sort_asc = true,
     view = "list",
+    multi_select = true,
   },
   sort    = { key = "name", folders_first = true },
   ui = {
@@ -25,6 +26,7 @@ S.defaults = {
     show_battery  = true,
     show_mem      = true,
     show_download = true,
+    icon_set      = "classic",
   },
   sound   = { enabled = false, volume = 70, set = "default" },
   update  = { auto_catalog = true, auto_app_check = true },

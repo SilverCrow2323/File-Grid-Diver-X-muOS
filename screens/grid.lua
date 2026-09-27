@@ -224,8 +224,14 @@ end
 local function pane_toggle_mark(p)
   local e = p.filtered[p.sel]
   if not e or e.is_parent then return end
+  local multi = Store.get("general", "multi_select") ~= false
+  if not multi then
+    p.marks = {}   -- single-select mode: clear previous
+  end
   p.marks[e.path] = (not p.marks[e.path]) or nil
-  if p.sel + 1 <= #p.filtered then p.sel = p.sel + 1 end
+  if multi and p.sel + 1 <= #p.filtered then
+    p.sel = p.sel + 1
+  end
 end
 
 -- ============================================================

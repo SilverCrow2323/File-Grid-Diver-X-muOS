@@ -715,6 +715,9 @@ function love.load()
   State.theme_name = "blame"
   State.theme = require("themes.theme_blame")
 
+  -- Apply persisted icon set
+  pcall(function() require("ui.file_icons").reload_style() end)
+
   -- Assets + audio
   require("core.assets").init()
   SFX.load()
