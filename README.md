@@ -1,11 +1,27 @@
 # File-GD X
 
-> The system console for a muOS handheld.
+<p>
+  <img alt="platform" src="https://img.shields.io/badge/platform-muOS%20%C2%B7%20RG35XX%20H-0d0d1a?labelColor=1a1a2e">
+  <img alt="engine" src="https://img.shields.io/badge/engine-L%C3%96VE%2011.5%20%2F%20LuaJIT-00ffcc?labelColor=1a1a2e">
+  <img alt="version" src="https://img.shields.io/badge/version-v1.5.0-ff00ff?labelColor=1a1a2e">
+  <img alt="license" src="https://img.shields.io/badge/license-GPL--3.0--or--later-0d0d1a?labelColor=1a1a2e">
+  <a href="https://github.com/SilverCrow2323/File-Grid-Diver-X-muOS/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/SilverCrow2323/File-Grid-Diver-X-muOS/actions/workflows/ci.yml/badge.svg">
+  </a>
+</p>
 
-A dual-pane file manager for **muOS** on the **Anbernic RG35XX H** and
-compatible devices. Built with [LÖVE 11.5](https://love2d.org/) and LuaJIT,
-designed for gamepad-only operation, SD-card safety, and the kind of
-dense, no-nonsense UI that a handheld actually needs.
+```
+┌──────────────────────────────────────────────────────────┐
+│  F I L E - G D   X                                        │
+│  the system console for a muOS handheld                   │
+└──────────────────────────────────────────────────────────┘
+```
+
+A gamepad-native, dual-pane file manager for **muOS** on the **Anbernic
+RG35XX H** (and compatible devices), built with [LÖVE 11.5](https://love2d.org/)
+and LuaJIT. It's the file manager, the diagnostics panel, the storage
+janitor, and the plugin hub your handheld didn't come with — plus one
+thing it definitely didn't come with either (see [Easter egg](#easter-egg)).
 
 Part of the **SPDW Factory** family of tools.
 
@@ -14,63 +30,58 @@ Part of the **SPDW Factory** family of tools.
 ## Table of contents
 
 - [Highlights](#highlights)
-- [Screens](#screens)
 - [Controls](#controls)
 - [Installation](#installation)
-  - [On muOS](#on-muos)
-  - [On desktop](#on-desktop)
-- [Feature reference](#feature-reference)
+- [The plugin system](#the-plugin-system)
+- [Storage & diagnostics](#storage--diagnostics)
+- [Easter egg](#easter-egg)
 - [Directory layout](#directory-layout)
 - [Configuration](#configuration)
-- [Building from source](#building-from-source)
+- [Development](#development)
 - [Troubleshooting](#troubleshooting)
 - [Roadmap](#roadmap)
-- [License](#license)
-- [Credits](#credits)
+- [License & credits](#license--credits)
 
 ---
 
 ## Highlights
 
-- **Single-screen focus.** Opens directly on the file manager. No
-  launcher maze, no mode you have to escape from.
+**Core file manager**
 - **Dual pane.** Two directories side by side, switch focus with one
-  button, copy from one to the other with two keystrokes.
-- **Four view modes.** List (with size, date, type), Grid, Compact
-  (three columns), Details (metadata block per row).
-- **Real archive support.** Zip, tar, tar.gz, tar.bz2, tar.xz, 7z, gz.
-  Create and extract, with a preview listing before you commit.
-- **Trash with restore.** Deletes go to a local trash index, not to the
-  void. Undo a bad tap hours later.
-- **Batch rename.** Pattern-driven, with preview, using `{name}`, `{ext}`,
-  `{n}`, `{nn}`, `{nnn}`, `{lower}`, `{upper}` tokens.
-- **Checksums.** MD5, SHA-1, SHA-256 for verifying ROMs and backups.
-- **Disk tools.** Free space, mounted volumes, chmod, symlinks, all from
-  the file manager.
-- **NTP time sync.** Because a muOS clock without battery is a muOS
-  clock that lies about when you saved your game.
-- **Native glyph for the muOS launcher.** Your app appears in
-  `MUOS/application/` with its own icon, category, and boot animation.
-- **Keyboard + gamepad.** Every action reachable from a d-pad, and every
-  menu item also mapped to a physical key for desktop testing.
+  button, copy from one to the other in two keystrokes.
+- **Four view modes.** List, Grid, Compact, Details.
+- **Real archives.** Create/extract `.zip`, `.tar`, `.tar.gz`; extract
+  also `.tar.bz2`, `.tar.xz`, `.7z`, `.gz` (system tools, nothing
+  bundled) — and, with the Archive Extender plugin, `.rar`, `.iso`,
+  `.img`, `.tar.zst`, `.cbr`/`.cb7`/`.cbt` on top.
+- **Trash with restore**, per-volume, indexed and browsable.
+- **Undo stack.** One press reverses the last mutating action —
+  rename, batch rename, copy, cut, trash, mkdir, touch — single file
+  or a whole batch counts as one entry.
+- **Batch rename** with a live preview and `{name}` `{ext}` `{n}`
+  `{nn}` `{nnn}` `{lower}` `{upper}` tokens.
+- **Checksums** (MD5 / SHA-1 / SHA-256) for verifying ROMs and backups.
+- **Small-file text editor** with atomic save, `.bak` rotation, and a
+  status bar (line endings, encoding, syntax, cursor, dirty flag).
+- **In-app search**, quick filter and a non-blocking recursive search.
 
----
+**System layer**
+- **Storage hub** — one screen, four sections: volume list with usage
+  bars, a per-category disk analyzer (ROM/video/audio/image/archive),
+  a content-hash duplicate finder, and a one-tap cleanup for trash,
+  logs, downloads and snapshots.
+- **Diagnostics** — CPU, kernel, uptime, temperature, battery, RAM,
+  network interfaces, mounted volumes, a live pad tester.
+- **GRID-DEV console** — a dedicated settings sub-app for
+  performance, debug, system behaviour and network toggles.
+- **NTP time sync** for muOS builds without a battery-backed RTC.
+- **Native launcher glyph**, so it shows up in `MUOS/application/`
+  with its own icon and category — no menu spelunking required.
 
-## Screens
-
-> Screenshots coming soon.
-
-- **Main menu** — title intro, five sections (File Xplorer, System,
-  Settings, Plugins, Exit), animated selection cards.
-- **File manager** — list view with metadata columns.
-- **Dual pane** — left and right directory trees, active pane
-  highlighted.
-- **Properties dialog** — size, permissions, owner, modified date,
-  symlink target, inline chmod toggles.
-- **Batch rename preview** — shows the first six renames before
-  applying.
-- **System diagnostics** — CPU, kernel, uptime, temperature, memory,
-  network interfaces, mounted volumes.
+**Plugins, not bloat**
+Everything past "manage my files" lives behind a permissioned plugin
+system (see [below](#the-plugin-system)), so the base app stays a
+file manager first.
 
 ---
 
@@ -85,55 +96,44 @@ Part of the **SPDW Factory** family of tools.
 | B               | Quit            |
 | Any key         | Skip intro      |
 
-### File manager (single pane)
+### File manager
 
-| Input           | Action                                        |
-| --------------- | --------------------------------------------- |
-| D-pad           | Move selection                                |
-| A               | Open folder / file                            |
-| B               | Parent folder                                 |
-| X               | Cycle filter (all / dirs / files / img / audio / video / text) |
-| Y               | Cycle sort (name / size / date / type)        |
-| L2 / R2         | Cycle view (list / grid / compact / details)  |
-| L1 / R1         | Previous / next page                          |
-| SPACE           | Toggle mark on the current item               |
-| START           | Open the SPDW side panel                      |
-| Ctrl+A          | Mark every item in view                       |
-| Ctrl+C / X / V  | Copy / cut / paste                            |
-| F2              | Rename                                        |
-| DEL             | Move to trash                                 |
-| Shift+DEL       | Permanent delete (requires confirmation)      |
-| N               | New folder                                    |
-| F               | New file                                      |
-| M               | Action menu for the focused item              |
-| P               | Properties dialog                             |
-| R               | Batch rename (requires 2+ marked items)       |
-| C               | Compute checksum (MD5)                        |
-| L               | Create symlink pointing to the focused item   |
-| E               | Open focused file in the text editor          |
-| Z               | Compress selection to `.zip`                  |
-| T               | Compress selection to `.tar.gz`               |
-| U               | Extract focused archive here                  |
-| I               | Extract focused archive into its own folder   |
-| ESC             | Quit                                          |
+| Input           | Action                                                          |
+| --------------- | ---------------------------------------------------------------|
+| D-pad           | Move selection                                                  |
+| A               | Open folder / file                                              |
+| B               | Parent folder                                                   |
+| X               | Cycle filter (all / dirs / files / img / audio / video / text)  |
+| Y               | Cycle sort (name / size / date / type)                          |
+| L2 / R2         | Cycle view (list / grid / compact / details)                    |
+| L1 / R1         | Previous / next page                                            |
+| SPACE           | Toggle mark on the current item                                 |
+| START           | Open the SPDW side panel                                        |
+| Ctrl+A          | Mark every item in view                                         |
+| Ctrl+C / X / V  | Copy / cut / paste                                              |
+| Ctrl+Z          | Undo last operation                                              |
+| F2              | Rename                                                           |
+| DEL             | Move to trash                                                    |
+| Shift+DEL       | Permanent delete (confirmation required)                        |
+| N / F           | New folder / new file                                            |
+| M               | Action menu for the focused item                                 |
+| P               | Properties (size, perms, owner, symlink target, chmod, checksum) |
+| R               | Batch rename (2+ marked items)                                   |
+| C               | Compute checksum                                                 |
+| Z / T           | Compress selection to `.zip` / `.tar.gz`                         |
+| U / I           | Extract archive here / into its own folder                       |
+| E               | Open in the text editor                                          |
+| ESC             | Quit                                                             |
 
-### File manager (dual pane)
+### Dual pane
 
-| Input       | Action                    |
-| ----------- | ------------------------- |
-| Ctrl+D      | Toggle dual pane          |
-| Tab         | Switch the active pane    |
-| D-pad       | Navigate the active pane  |
+| Input  | Action                    |
+| ------ | ------------------------- |
+| Ctrl+D | Toggle dual pane          |
+| Tab    | Switch the active pane    |
+| D-pad  | Navigate the active pane  |
 
-All the single-pane shortcuts apply to whichever pane has focus.
-
-### SPDW side panel (open with START)
-
-| Input     | Action        |
-| --------- | ------------- |
-| D-pad     | Move          |
-| A         | Activate      |
-| B / START | Close panel   |
+All single-pane shortcuts apply to whichever pane has focus.
 
 ---
 
@@ -142,32 +142,24 @@ All the single-pane shortcuts apply to whichever pane has focus.
 ### On muOS
 
 1. Insert the SD card into your PC.
-2. Copy the folder `File-GD X/` into
-   `MUOS/application/` on the SD card. On most muOS builds that path is:
+2. Copy the `File-GD X/` folder into `MUOS/application/` on the card:
 
    ```
    /media/<your-user>/<SD-LABEL>/MUOS/application/File-GD X/
    ```
 
-3. If you cloned this repo, use the bundled helper:
+3. Eject cleanly, insert the card into the RG35XX H, boot muOS, and
+   pick **File-GD X** from the **Utilities** category.
 
-   ```sh
-   ./mux_launch.sh /media/<your-user>/<SD-LABEL>
-   ```
+Prebuilt `.muxapp` packages are attached to each
+[GitHub Release](https://github.com/SilverCrow2323/File-Grid-Diver-X-muOS/releases)
+instead of living in the repo — grab one from there if you don't want
+to build.
 
-   Or, to produce a portable tarball to move manually:
-
-   ```sh
-   ./mux_launch.sh
-   ```
-
-4. Eject the SD card cleanly, insert it into the RG35XX H, boot muOS,
-   and pick **File-GD X** from the **Utilities** category.
-
-Logs are written to `data/logs/fgd_<timestamp>.log`. The latest is
+Logs are written to `data/logs/fgd_<timestamp>.log`; the latest is
 symlinked at `data/logs/latest.log`.
 
-### On desktop
+### On desktop (for testing)
 
 LÖVE 11.5 is required.
 
@@ -201,86 +193,65 @@ Logs land in `.desktopbase/logs/`.
 
 ---
 
-## Feature reference
+## The plugin system
 
-### File operations
+A plugin is a folder under `plugins/` with a `plugin.lua` manifest and
+a `main.lua` entry point. Six ship today:
 
-- **Copy / cut / paste** between panes or within a pane. Cross-device
-  operations fall back to copy-then-delete. Name collisions are
-  resolved automatically with a numeric suffix.
-- **Multi-selection.** Mark items with SPACE, act on the whole set.
-  Marks are shown with a leading `*` and a cyan highlight.
-- **Rename.** Single file rename via F2. Batch rename via R with
-  pattern tokens and a preview of the first six results.
-- **Delete.** Default is soft delete to `data/trash/`. The trash is
-  indexed, browsable, and restorable from the SPDW panel. A separate
-  hard-delete command requires a confirmation modal.
-- **Properties.** Full size, permissions, owner, group, modified time,
-  and symlink target. Includes inline chmod toggles for user, group,
-  and other, and a one-tap checksum.
+| Plugin              | Category    | What it does                                          |
+| -------------------- | ----------- | ------------------------------------------------------ |
+| **Chou Henka**       | Media       | Media center — library, player, EQ, visualizer, video   |
+| **Disk Doctor**      | Diagnostics | Guided wizard to free up disk space                     |
+| **Input Holmes**     | Diagnostics | A study in input mapping — diagnoses pad/key issues     |
+| **Office Reader**    | Extensions  | View `.docx`, `.xlsx`, `.pptx` files                    |
+| **Web View**         | Extensions  | HTML rendering via a built-in Lua parser (no download)  |
+| **Archive Extender** | Extensions  | Unlocks RAR, ISO, IMG, 7z, TAR.ZST via `7z`/`unrar`      |
 
-### Archives
+PDF support (`pdf_lib`, a bundled PyMuPDF) is offered as an in-app
+**download-on-demand** rather than a vendored dependency — it's large,
+so it isn't part of the base install or the repo.
 
-Supported formats:
+**Permissions.** Nothing a plugin does is implicit. `plugins/api.lua`
+gates `io`, `os.execute`/`io.popen`, and cross-plugin `require` behind
+a small permission catalog (`filesystem.read`, `filesystem.write`,
+`shell.exec`, `love.filesystem`). The first time a plugin needs one,
+a consent screen asks; grants persist to `data/plugin_perms.json` and
+can be revoked per-plugin at any time. Plugins that only touch the
+app's own trusted wrappers (`services.fs`, `ui.*`, `core.*`) need no
+permission at all. `print()` inside a plugin is routed to
+`data/fgd_runtime.log` with a `[plugin <name>]` prefix instead of
+going to stdout.
 
-| Create           | Extract          |
-| ---------------- | ---------------- |
-| `.zip`           | `.zip`           |
-| `.tar`           | `.tar`           |
-| `.tar.gz`        | `.tar.gz`        |
-|                  | `.tar.bz2`       |
-|                  | `.tar.xz`        |
-| `.7z` (if `7z`)  | `.7z` (if `7z`)  |
-|                  | `.gz`            |
+Writing your own: see [`plugins/README.md`](plugins/README.md) for
+the manifest shape and the full permission/sandbox reference.
 
-Uses system `zip`, `unzip`, `tar`, and `7z` where available. Nothing is
-bundled; if a tool is missing, the command reports it clearly instead
-of failing silently.
+---
 
-### Search
+## Storage & diagnostics
 
-In-folder quick filter with `/`. Recursive search with a separate
-screen, powered by a detached shell job that writes results to `/tmp`
-and polls for completion — the UI never blocks.
+- **VOLUMES** — every mount point, free/total bars, remount actions.
+- **ANALYZE** — usage broken down by ROM / video / audio / image /
+  archive / other, with a recoverable-space summary.
+- **DUPLICATES** — content-hash (size pre-filter + MD5) duplicate
+  finder with per-group keep/drop and a one-tap move-to-trash.
+- **CLEANUP** — wipe trash, logs, downloads, temp, and snapshots in
+  one pass.
+- **GRID-DEV** — performance, debug/diag, system behaviour, and
+  network toggles behind a dedicated console (Settings → GRID-DEV).
 
-### Storage
+---
 
-- Free space indicator in every pane header.
-- Volume list with per-mount usage bar in the SPDW panel.
-- Mount options visible (ro, rw, sync, noatime).
-- NTP time synchronization for muOS builds that ship without a real
-  RTC.
+## Easter egg
 
-### Diagnostics
-
-- **System screen:** CPU model, kernel, uptime, temperature, battery,
-  RAM usage with color-coded bar, network interfaces with IPv4, mounted
-  volumes.
-- **Log screen:** latest session log, live tail, filter by level.
-- **Pad test screen:** every button, stick, and trigger visualized with
-  live state.
-- **Header:** clock, wifi signal with LED, battery, RAM, all as
-  hand-stamped metal plaques.
-
-### Editor
-
-A small-file text editor for configs, scripts, and notes.
-
-- Files up to 512 KB. Larger files open read-only.
-- Preserves line endings (LF / CRLF) and BOM.
-- Atomic save with `.fgd.bak` rotation.
-- On-screen keyboard plus physical keyboard support.
-- Status bar with line ending, encoding, detected syntax, cursor
-  position, file size, dirty flag.
-
-### Cosmetic
-
-- Boot animation on launch (1.5 seconds, skip with any key).
-- Main menu intro: title glitch, red X carved with a brush, staggered
-  card entrance.
-- CRT overlay (scanlines, vignette, subtle static).
-- Hand-stamped metal plaques for header devices.
-- Theme system: three built-in themes (`blame`, `gc`, `wii`).
+There's a hidden retro one-on-one fighting screen tucked behind the
+main menu, unlocked with a Konami-style input on boot, complete with
+its own music, background art, and a floating mascot with selectable
+variants. It's a love letter to a certain '90s PS1 fighting game, not
+a commercial feature — non-commercial fan homage, no affiliation with
+the original rights holders. If you're forking this for a wider or
+commercial release, that folder (`assets/**/fb/`,
+`screens/*_fb*.lua`, `ui/finalbout.lua`) is the first thing to strip
+or replace.
 
 ---
 
@@ -288,22 +259,29 @@ A small-file text editor for configs, scripts, and notes.
 
 ```
 File-GD X/
-├── main.lua                entry point
-├── conf.lua                LÖVE config + global error handler
-├── mux_launch.sh           muOS launcher
-├── deploy_desktop.sh       desktop launcher with logging
-├── mux_launch.sh           SD card staging helper
-├── README.md
+├── main.lua                entry point, screen registry, nav stack
+├── conf.lua                LÖVE window config + global error handler
+├── mux_launch.sh           muOS launcher (suspends the volume OSD)
+├── deploy_desktop.sh       desktop launcher with session logging
+├── build_release.sh        packages a .muxapp for release
+├── CHANGELOG.md
 ├── LICENSE
 │
-├── core/                   state, settings, input, json, audio, clipboard
+├── core/                   native bootstrap, state, input map, audio,
+│                           json, clipboard, log
 ├── ui/                     frame, draw, glyph, keyboard, modal, notify,
-│                           properties, multitool, batchrename
+│                           properties, transition, finalbout
 ├── screens/                mainmenu, grid, editor, image_viewer, search,
-│                           settings, log, about, pad_test, operations,
-│                           disk_tools, device, plugins
-├── services/               fs, fs_async, archive, trash, checksum, dspace
+│                           settings, storage, grid_dev, plugins,
+│                           fgd_plugins, device, about, pad_test, ...
+├── services/                fs, fs_async, archive, archive_rt, trash,
+│                           checksum, catalog, operations, dspace
+├── plugins/                chou_henka, disk_doctor, input_holmes,
+│                           office_reader, web_view, archive_extender,
+│                           api.lua (permissions), loader.lua
 ├── themes/                 blame, gc, wii
+├── tests/                  busted specs
+├── tools/                  build_native.sh, check_syntax.sh, run_tests.sh
 ├── assets/                 fonts, images, sfx
 ├── glyph/                  muOS launcher icons
 ├── lib/                    bundled LÖVE runtime + native extensions
@@ -317,8 +295,8 @@ File-GD X/
 
 ## Configuration
 
-Settings persist to `data/fgd.json`. The file is created on first run
-and updated whenever you change a toggle.
+Settings persist to `data/fgd.json`, created on first run and updated
+whenever a toggle changes:
 
 ```json
 {
@@ -329,185 +307,120 @@ and updated whenever you change a toggle.
     "sort_asc": true,
     "dual": false
   },
-  "sort": {
-    "key": "name",
-    "folders_first": true
-  },
-  "ui": {
-    "show_fps": false,
-    "particles": true
-  },
-  "sound": {
-    "enabled": true,
-    "volume": 0.55
-  },
+  "sort": { "key": "name", "folders_first": true },
+  "ui": { "show_fps": false, "particles": true },
+  "sound": { "enabled": true, "volume": 0.55 },
   "last_cwd": "/mnt/mmc"
 }
 ```
 
-You can edit this by hand or through the **Settings** screen.
+Edit it by hand or through the **Settings** screen. Three built-in
+themes ship: `blame`, `gc`, `wii`.
 
 ---
 
-## Building from source
+## Development
 
-Nothing to build in the usual sense: this is Lua. If you want to test
-locally:
+Nothing to build in the usual sense — this is Lua. To iterate locally:
 
 ```sh
-git clone <this-repo> "File-GD X"
+git clone https://github.com/SilverCrow2323/File-Grid-Diver-X-muOS.git "File-GD X"
 cd "File-GD X"
 love .
 ```
 
-### Optional native extensions
+**Testing.** `tests/` holds `busted` specs for the pure-Lua modules
+(`fs`, `json`, `operations`, `grid_helpers`, settings store). Run them
+with `tools/run_tests.sh` or `busted tests/`.
 
-No pure-Lua libraries are vendored. The codebase relies on the
-standard LuaJIT stdlib and, if present, the native modules
-(`lfs`, `cjson`).
+**Linting.** `luacheck .` (config in `.luacheckrc`, `lua51+love`
+standard).
 
-### Compiling `lfs` and `cjson` for muOS (aarch64)
+**CI.** `.github/workflows/ci.yml` runs three jobs on every push/PR:
+`luacheck`, `busted` (pure-Lua path), and `busted` again with the
+native `lfs`/`cjson` modules installed.
 
-Requires a cross-toolchain. This is **not required** to run the app.
-The pure-Lua fallbacks work; the native extensions just make large
-directory listings faster.
-
-```sh
-sudo apt install gcc-aarch64-linux-gnu libc6-dev-arm64-cross \
-                 libluajit-5.1-dev
-
-mkdir -p build && cd build
-git clone --depth 1 https://github.com/lunarmodules/luafilesystem
-cd luafilesystem
-
-aarch64-linux-gnu-gcc -O2 -fPIC -shared \
-  -I/usr/include/luajit-2.1 \
-  src/lfs.c -o ../../lib/aarch64/lfs.so
-```
-
-The loader in `core/native.lua` (if present) picks the right `.so` for
-the current architecture and falls back silently if a library is
-missing.
+**Optional native extensions.** No Lua libraries are vendored; the
+app runs on stock LuaJIT with pure-Lua fallbacks for everything. The
+native `lfs`/`cjson` modules (built via `tools/build_native.sh`) are
+purely a speed-up for large directory listings and are auto-detected
+at boot (`core/native.lua`) — the app works fine without them.
 
 ---
 
 ## Troubleshooting
 
-### The app crashes on launch and shows a blue screen
+**Blue error screen on launch.** LÖVE's built-in error overlay. Check
+`data/fgd_error.log`, or run `love . 2>&1 | tee /tmp/fgd.log` for a
+live trace.
 
-LÖVE 11.5 shows a blue error overlay on unhandled errors. Look at
-`data/fgd_error.log` for the traceback, or run from a terminal:
+**Display freezes after launch on muOS.** The volume OSD daemon can
+steal the framebuffer. Launch through `mux_launch.sh`, which suspends
+it for the session and restores it on exit.
 
-```sh
-love . 2>&1 | tee /tmp/fgd.log
-```
+**File listing shows `--` for dates/sizes.** The device's `stat` isn't
+GNU-compatible; `services/fs.lua` falls back to parsing `ls -lan`,
+which loses precise timestamps. Expected on minimal BusyBox builds.
 
-### On muOS, the app starts but the display is frozen
-
-muOS's volume OSD daemon sometimes steals the framebuffer.
-`mux_launch.sh` suspends it for the session and restores it on exit.
-If you launched the app manually, run it through `mux_launch.sh`.
-
-### File listing shows `--` for dates and sizes
-
-The system's `stat` command is not GNU-compatible. `services/fs.lua`
-probes for this and falls back to parsing `ls -lan`, which loses the
-precise modification timestamp. This is expected on minimal BusyBox
-builds.
-
-### Archive operations fail with "tool missing"
-
-The file manager delegates archive handling to system binaries. Check
-what is available on your device:
+**"tool missing" on archive operations.** Delegated to system `zip`,
+`unzip`, `tar`, `7z`. Check what's actually on the device:
 
 ```sh
 command -v zip unzip tar 7z
 ```
 
-On a bare muOS install, `zip` and `tar` are usually present. `7z` is
-often not. The app reports the missing tool rather than failing
-silently.
+`7z` is often absent on a bare muOS install; the app reports the
+missing tool by name instead of failing silently.
 
-### NTP sync fails
+**NTP sync fails.** `ntpdate`/`sntp` are often missing; the app falls
+back to `busybox ntpd -q`. If neither exists, set the time manually
+from the System screen.
 
-`ntpdate` and `sntp` are often absent on handheld builds. The app falls
-back to `busybox ntpd -q`. If neither works, set the time from the
-**System** screen manually.
-
-### I want to see what the app is doing
-
-Two logs, both persistent:
-
-- `.desktopbase/logs/latest.log` on desktop.
-- `data/logs/latest.log` on muOS.
-
-And two runtime logs:
-
-- `data/fgd_runtime.log` — internal errors and warnings.
-- `data/fgd_error.log` — global error handler output.
+**Logs, if something looks wrong:** `.desktopbase/logs/latest.log`
+(desktop) or `data/logs/latest.log` (muOS) for session logs;
+`data/fgd_runtime.log` for internal warnings; `data/fgd_error.log`
+for the global error handler's output.
 
 ---
 
 ## Roadmap
 
-### Shipped in 1.0
-
-- [x] Dual-pane file manager
-- [x] Four view modes
-- [x] Multi-selection, clipboard
-- [x] Archive create and extract
-- [x] Trash with restore
-- [x] Batch rename
-- [x] Checksums
-- [x] chmod, symlink
-- [x] Disk tools, mounts, NTP
-- [x] Text editor
-- [x] Image viewer
-- [x] Search
-- [x] System diagnostics
-- [x] Pad test
-- [x] Main menu with intro animation
-- [x] Boot animation
-- [x] muOS glyph
+### Shipped
+- [x] Dual-pane file manager, 4 view modes
+- [x] Archives, trash + restore, undo stack, batch rename, checksums
+- [x] Storage hub (volumes / analyze / duplicates / cleanup)
+- [x] GRID-DEV console, native bindings layer
+- [x] Plugin system with permissions + sandbox, 6 plugins
+- [x] Text editor, image viewer, in-app search
+- [x] Test suite + CI (luacheck, busted)
 
 ### Planned
-
 - [ ] FAT32 filename sanitizer
 - [ ] Custom keybinding editor
 - [ ] Theme schema validator
 - [ ] Automated screen tests
+- [ ] Real screenshots in this README
 
 ### Explicitly out of scope
-
-- Embedded terminals (SSH from a PC).
-- HTTP / SFTP / FTP servers.
-- Cloud sync.
-- Hex *editing* (read-only hex view only).
-- ROM auto-organizers.
+- Embedded terminals / SSH from a PC
+- HTTP / SFTP / FTP servers, cloud sync
+- Hex *editing* (read-only hex view only)
+- ROM auto-organizers
 
 ---
 
-## License
+## License & credits
 
-**GPL-3.0-or-later.** See `LICENSE`.
+**GPL-3.0-or-later** — see [`LICENSE`](LICENSE).
 
-This project reuses ideas and infrastructure from
-[DolphinUI](https://github.com/), the muOS interface layer, and the
-LÖVE ecosystem. All third-party code vendored under `vendor/` keeps
-its original MIT license; see the individual files for details.
+Built on the muOS interface conventions and LÖVE infrastructure shared
+with this author's other SPDW Factory projects for the RG35XX H.
 
----
-
-## Credits
-
-- **sirpips** aka **SilverCrow2323** — design, code, and stubborn
-  refusal to ship a bad UI.
+- **sirpips** (SilverCrow2323) — design, code, and a stubborn refusal
+  to ship a bad UI.
 - **SPDW Factory** — the umbrella this tool lives under.
 - **The LÖVE team** — for a runtime that fits on a handheld.
 - **The muOS community** — for keeping the RG35XX H interesting.
 
-If this tool saves your data, your time, or your sanity, tell somebody
-who owns an Anbernic. Word of mouth is the only marketing we can
-afford.
-# File-Grid-Diver-X-muOS
-# File-Grid-Diver-X-muOS
+If this tool saves your data, your time, or your sanity, tell someone
+who owns an Anbernic.
