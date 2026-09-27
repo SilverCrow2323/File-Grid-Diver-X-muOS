@@ -857,9 +857,20 @@ local function draw_tab_bar(x, y, w)
       love.graphics.rectangle("line", tx + 0.5, y + 0.5, tw - 1, tab_h - 1, 4, 4)
     end
 
-    love.graphics.setFont(A.font(A.FONT_BODY_BOLD, focused and 11 or 10))
+    local base_size = focused and 11 or 10
+    local label_font = nil
+    for size = base_size, 7, -1 do
+      local f = A.font(A.FONT_BODY_BOLD, size)
+      if f:getWidth(tab.label) <= tw - 6 then
+        label_font = f
+        break
+      end
+    end
+    label_font = label_font or A.font(A.FONT_BODY_BOLD, 7)
+    love.graphics.setFont(label_font)
     col(focused and {1,1,1} or {0.65, 0.68, 0.72}, 1)
-    love.graphics.printf(tab.label, tx, y + 8, tw, "center")
+    love.graphics.printf(tab.label, tx,
+      y + (tab_h - label_font:getHeight()) / 2, tw, "center")
   end
 end
 

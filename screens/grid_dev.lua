@@ -230,20 +230,32 @@ local TABS = {
       end, true),
   }},
 
-  { id="goku", label="MASCOT", accent=ORG, rows=function()
+  { id="goku", label="CHARACTER", accent=ORG, logo="assets/images/fblogo.png", rows=function()
     local r = {}
-    r[#r+1] = { kind = "mascot_preview", label = "Mascot preview" }
+    r[#r+1] = {
+      kind = "character_select",
+      get = function()
+        local v = Store.get("goku", "mascot")
+        if type(v) ~= "string" or not MASCOT_VARIANTS[v] then return "goku" end
+        return v
+      end,
+      cycle = function(dir)
+        local opts = mascot_options()
+        local cur = Store.get("goku", "mascot") or "goku"
+        local idx = 1
+        for i, v in ipairs(opts) do
+          if v == cur then idx = i end
+        end
+        idx = ((idx - 1 + dir) % #opts + #opts) % #opts + 1
+        Store.set("goku", "mascot", opts[idx])
+        Store.save()
+      end,
+    }
     r[#r+1] = tog("Show mascot", "display the mascot in the corner",
       "goku", "show_mascot", true)
-    r[#r+1] = enu("Mascot", "character to display",
-      "goku", "mascot", mascot_options, "goku", nil,
-      function(name)
-        local v = MASCOT_VARIANTS[name]
-        return v and v.portrait or nil
-      end)
-    r[#r+1] = num("Transparency", "0% invisible, 100% opaque",
+    r[#r+1] = num("Transparency", "0 = opaque, 100 = invisible",
       "goku", "transparency", 0, 100, 5,
-      function(v) return v .. "%" end, 100)
+      function(v) return v .. "%" end, 0)
     r[#r+1] = enu("Sprite size", "size of the mascot",
       "goku", "size", {"small", "medium", "large", "huge"}, "medium")
     r[#r+1] = num("Float amplitude", "vertical oscillation",
@@ -281,18 +293,30 @@ MASCOT_VARIANTS = {
     right    = "assets/images/fb/sprites/goku.png",
     portrait = "assets/images/fb/small_portraits/goku.png",
     unlock   = nil,
+    display_name  = "Goku",
+    variant_label = nil,
+    variant_color = {1.00, 0.90, 0.30},
+    series_icon   = "assets/images/fb/gt.png",
   },
   goku_ssj2 = {
     left     = "assets/images/fb/sprites/gokussj2.png",
     right    = "assets/images/fb/sprites/gokussj2.png",
     portrait = "assets/images/fb/small_portraits/gokussj2.png",
     unlock   = "fb_view",
+    display_name  = "Goku",
+    variant_label = "Super Saiyan",
+    variant_color = {1.00, 0.90, 0.30},
+    series_icon   = "assets/images/fb/z.png",
   },
   goku_ssj4 = {
     left     = "assets/images/gokussj4_sx.png",
     right    = "assets/images/gokussj4_dx.png",
     portrait = "assets/images/fb/small_portraits/gokussj4.png",
     unlock   = "fb_audio",
+    display_name  = "Goku",
+    variant_label = "Super Saiyan 4",
+    variant_color = {1.00, 0.40, 0.20},
+    series_icon   = "assets/images/fb/gt.png",
   },
 }
 local MASCOT_ORDER = { "goku", "goku_ssj2", "goku_ssj4" }
@@ -430,7 +454,7 @@ local function activate()
   if not r then return end
   if r.kind == "toggle" then
     if r.toggle then r.toggle() end
-  elseif r.kind == "enum" or r.kind == "slider" then
+  elseif r.kind == "enum" or r.kind == "slider" or r.kind == "character_select" then
     if r.cycle then r.cycle(1) end
   elseif r.kind == "action" then
     if r.act then r.act() end
@@ -478,7 +502,8 @@ function S.pad(b)
       local ok, SFX = pcall(require, "core.audio")
       if ok then
         if r.kind == "toggle" then SFX.play("toggle_switch")
-        elseif r.kind == "enum" or r.kind == "slider" then SFX.play("toggle_badge")
+        elseif r.kind == "enum" or r.kind == "slider" or r.kind == "character_select" then
+          SFX.play("toggle_badge")
         else SFX.play("enter") end
       end
     end
@@ -686,68 +711,189 @@ local function draw_slider(x, y, w, value, minv, maxv, fmt, focused, accent)
   love.graphics.circle("fill", kx, ky, 7)
 end
 
--- Mascot preview special row
-local function draw_mascot_preview(x, y, w, h, focused)
-  local accent = TEAL_HI
-  -- dark preview box
-  col({0.020, 0.050, 0.070}, 0.95)
-  love.graphics.rectangle("fill", x, y, w, h, 4, 4)
-  col(accent, focused and 0.90 or 0.35)
-  love.graphics.setLineWidth(focused and 2 or 1)
-  love.graphics.rectangle("line", x + 0.5, y + 0.5, w - 1, h - 1, 4, 4)
-  love.graphics.setLineWidth(1)
-  D.corner_ticks(x + 6, y + 6, w - 12, h - 12, 10, accent, focused and 0.9 or 0.35)
+-- Mascot tab fixed header: character select (left) + mascot (right).
+local function draw_mascot_header(y0, W_, h, focused, accent)
+  -- ============ LEFT: character select ============
+  local left_x = 16
+  local left_w = 380
+  local psize  = 68
+  local pgap   = 14
 
-  -- left label
-  love.graphics.setFont(A.font(A.FONT_MONO, 10))
-  col(accent, 0.9)
-  love.graphics.print("MASCOT PREVIEW", x + 14, y + 10)
-  love.graphics.setFont(A.font(A.FONT_MONO, 9))
-  col(accent, 0.7)
-  love.graphics.print("Goku SSJ4 sprite", x + 14, y + 26)
+  -- header image "PLAYER SELECT" (assets/images/fb/player_select.png)
+  local ps_img = A.image("assets/images/fb/player_select.png")
+  if ps_img then
+    local iw, ih = ps_img:getDimensions()
+    local max_w  = left_w - 20
+    local max_h  = 22
+    local sc     = math.min(max_w / iw, max_h / ih)
+    local dw, dh = iw * sc, ih * sc
+    love.graphics.setColor(1, 1, 1, 0.95)
+    love.graphics.draw(ps_img, left_x + (left_w - dw) / 2, y0 + 4, 0, sc, sc)
+    love.graphics.setColor(1, 1, 1, 1)
+  else
+    love.graphics.setFont(A.font(A.FONT_MONO, 10))
+    col(accent, 0.9)
+    love.graphics.printf("PLAYER SELECT", left_x, y0 + 6, left_w, "center")
+  end
+  col(accent, 0.3)
+  love.graphics.rectangle("fill", left_x + 4, y0 + 26, left_w - 8, 1)
 
-  -- preview the sprite (use the value returned by ensure_mascot)
-  local preview_entry = ensure_mascot(get_active_mascot())
-  local side = goku_get("side", "left")
-  local preview_img
-  if preview_entry then
-    if side == "left" then
-      preview_img = preview_entry.img_l or preview_entry.img_r
+  local opts = mascot_options()
+  local cur = Store.get("goku", "mascot") or "goku"
+  local cur_idx = 1
+  for i, k in ipairs(opts) do
+    if k == cur then cur_idx = i end
+  end
+
+  local total_pw = #opts * psize + (#opts - 1) * pgap
+  local px = left_x + math.floor((left_w - total_pw) / 2)
+  local py = y0 + 36
+
+  for i, key in ipairs(opts) do
+    local v = MASCOT_VARIANTS[key]
+    local is_foc = (i == cur_idx)
+    local cx = px + (i - 1) * (psize + pgap)
+
+    -- slot background
+    col({0.05, 0.06, 0.08}, 1)
+    love.graphics.rectangle("fill", cx, py, psize, psize, 4, 4)
+
+    if v and v.portrait then
+      local img = A.image(v.portrait)
+      if img then
+        local iw, ih = img:getDimensions()
+        local sc = math.min((psize - 4) / iw, (psize - 4) / ih)
+        local dw, dh = iw * sc, ih * sc
+        local ix = cx + (psize - dw) / 2
+        local iy = py + (psize - dh) / 2
+
+        -- base draw: non-selected at reduced alpha
+        if is_foc then
+          love.graphics.setColor(1, 1, 1, 1)
+        else
+          love.graphics.setColor(1, 1, 1, 0.50)
+        end
+        love.graphics.draw(img, ix, iy, 0, sc, sc)
+
+        -- Final Bout wash: dark blue/violet overlay sui non selezionati
+        if not is_foc then
+          love.graphics.setColor(0.10, 0.10, 0.32, 0.55)
+          love.graphics.rectangle("fill", cx, py, psize, psize, 4, 4)
+        end
+        love.graphics.setColor(1, 1, 1, 1)
+      end
+    end
+
+    if is_foc then
+      col(accent, 1)
+      love.graphics.setLineWidth(2.5)
     else
-      preview_img = preview_entry.img_r or preview_entry.img_l
+      col(accent, 0.30)
+      love.graphics.setLineWidth(1)
+    end
+    love.graphics.rectangle("line", cx + 0.5, py + 0.5,
+      psize - 1, psize - 1, 4, 4)
+    love.graphics.setLineWidth(1)
+
+    if is_foc then
+      col(accent, 1)
+      love.graphics.polygon("fill",
+        cx + psize/2, py - 5,
+        cx + psize/2 - 5, py - 1,
+        cx + psize/2 + 5, py - 1)
     end
   end
-  local px_cx = x + w - 100
-  local px_cy = y + h / 2
-  if preview_img then
-    local iw, ih = preview_img:getDimensions()
-    local target_h = math.min(h - 20, 90)
-    local sc = target_h / ih
-    local dw = iw * sc
-    local dh = ih * sc
-    local float_y = math.sin(mascot.phase) * 4
-    col({1,1,1}, 1)
-    love.graphics.draw(preview_img, px_cx - dw/2, px_cy - dh/2 + float_y, 0, sc, sc)
-    col({1,1,1}, 1)
-  else
-    -- fallback
-    col(accent, 0.9)
-    love.graphics.circle("line", px_cx, px_cy, 30)
-    love.graphics.setFont(A.font(A.FONT_MONO, 10))
-    col(accent, 0.7)
-    love.graphics.printf("sprite missing", px_cx - 50, px_cy - 6, 100, "center")
+
+  -- info sotto i portrait
+  local info_y = py + psize + 10
+  local sv = MASCOT_VARIANTS[cur]
+  if sv then
+    if sv.variant_label then
+      local vc = sv.variant_color or {1, 0.9, 0.3}
+      love.graphics.setFont(A.font(A.FONT_BODY_BOLD, 13))
+      love.graphics.setColor(vc[1], vc[2], vc[3], 1)
+      love.graphics.printf(sv.variant_label, left_x, info_y, left_w, "center")
+      info_y = info_y + 18
+    end
+    local name = sv.display_name or cur
+    local font_n = A.font(A.FONT_BODY_BOLD, 17)
+    love.graphics.setFont(font_n)
+    love.graphics.setColor(1, 1, 1, 1)
+    local name_w = font_n:getWidth(name)
+    local series_img = sv.series_icon and A.image(sv.series_icon)
+    local icon_w, icon_sc = 0, 0
+    if series_img then
+      local iw, ih = series_img:getDimensions()
+      icon_sc = 16 / ih
+      icon_w  = iw * icon_sc + 6
+    end
+    local total_w = name_w + icon_w
+    local start_x = left_x + math.floor((left_w - total_w) / 2)
+    love.graphics.print(name, start_x, info_y)
+    if series_img then
+      local iy = info_y + (font_n:getHeight() - 16) / 2
+      love.graphics.setColor(1, 1, 1, 0.95)
+      love.graphics.draw(series_img, start_x + name_w + 6, iy, 0, icon_sc, icon_sc)
+      love.graphics.setColor(1, 1, 1, 1)
+    end
   end
 
-  -- current config pill
-  local pw, ph = 60, 20
-  local pp = x + w - pw - 14
-  col({accent[1]*0.20, accent[2]*0.20, accent[3]*0.20}, 1)
-  love.graphics.rectangle("fill", pp, y + 10, pw, ph, 10, 10)
-  col(accent, 0.9)
-  love.graphics.rectangle("line", pp + 0.5, y + 10.5, pw - 1, ph - 1, 10, 10)
-  love.graphics.setFont(A.font(A.FONT_MONO, 9))
-  col({1,1,1}, 1)
-  love.graphics.printf(goku_get("size", "medium"), pp, y + 13, pw, "center")
+  -- bordo highlight del blocco quando la row e' a fuoco
+  if focused then
+    col(accent, 0.85)
+    love.graphics.setLineWidth(1.5)
+    love.graphics.rectangle("line", left_x, y0 + 2, left_w, h - 6, 4, 4)
+    love.graphics.setLineWidth(1)
+  end
+
+  -- ============ RIGHT: mascot ============
+  local right_x = W_ - 190
+  local right_w = 170
+  local mcx = right_x + right_w / 2
+
+  local stage_w = 155
+  local stage_h = 155
+  local sx = mcx - stage_w / 2
+  local sy = y0 + math.floor((h - stage_h) / 2)
+  col({0.020, 0.026, 0.032}, 0.55)
+  love.graphics.rectangle("fill", sx, sy, stage_w, stage_h, 4, 4)
+  col(accent, 0.28)
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle("line", sx + 0.5, sy + 0.5,
+    stage_w - 1, stage_h - 1, 4, 4)
+  D.corner_ticks(sx + 6, sy + 6, stage_w - 12, stage_h - 12,
+    8, accent, 0.35)
+
+  if goku_get("show_mascot", true) and not S._mascot_hidden then
+    local entry = ensure_mascot(get_active_mascot())
+    if entry and (entry.img_r or entry.img_l) then
+      local img = entry.img_r or entry.img_l
+      local iw, ih = img:getDimensions()
+      local size_key = goku_get("size", "medium")
+      local target_h = (SIZE_MAP[size_key] or 112) * 0.85
+      local sc2 = target_h / ih
+      local dw  = iw * sc2
+      local dh  = ih * sc2
+      local float_y = math.sin(mascot.phase) *
+        (goku_get("amp", 14) or 14) * 0.6
+      local bx = mcx - dw / 2
+      local by = sy + (stage_h - dh) / 2 + float_y
+      local transparency = goku_get("transparency", 0)
+      if type(transparency) ~= "number" then transparency = 0 end
+      transparency = math.max(0, math.min(100, transparency))
+      local alpha = 1 - transparency / 100
+      if alpha > 0.01 then
+        if goku_get("shadow", true) then
+          col({0, 0, 0}, 0.35 * alpha)
+          love.graphics.ellipse("fill",
+            bx + dw/2, by + dh + 3, dw * 0.42, 3)
+        end
+        col({1, 1, 1}, alpha)
+        love.graphics.draw(img, bx, by, 0, sc2, sc2)
+        col({1, 1, 1}, 1)
+      end
+    end
+  end
 end
 
 -- ============================================================
@@ -760,15 +906,15 @@ local ROW_GAP    = 4
 
 local function row_h(r)
   if r.kind == "slider" then return ROW_H_SLDR end
-  if r.kind == "mascot_preview" then return ROW_H_MASC end
+  if r.kind == "character_select" then return 132 end
   return ROW_H
 end
 
 local function draw_row(r, x, y, w, focused, accent, idx)
   local h = row_h(r)
 
-  if r.kind == "mascot_preview" then
-    draw_mascot_preview(x, y, w, h, focused)
+  if r.kind == "character_select" then
+    draw_character_select(x, y, w, h, focused, accent)
     return
   end
 
@@ -869,9 +1015,39 @@ local function draw_tab_bar(x, y, w)
       col(c, 0.35)
       love.graphics.rectangle("line", tx + 0.5, y + 0.5, tw - 1, tab_h - 1, 4, 4)
     end
-    love.graphics.setFont(A.font(A.FONT_BODY_BOLD, focused and 11 or 10))
-    col(focused and {1,1,1} or {0.65, 0.68, 0.72}, 1)
-    love.graphics.printf(tab.label, tx, y + 9, tw, "center")
+    if tab.logo then
+      local img = A.image(tab.logo)
+      if img then
+        local iw, ih = img:getDimensions()
+        local max_w = tw - 10
+        local max_h = tab_h - 10
+        local sc = math.min(max_w / iw, max_h / ih)
+        local dw, dh = iw * sc, ih * sc
+        love.graphics.setColor(1, 1, 1, focused and 1 or 0.70)
+        love.graphics.draw(img, tx + (tw - dw) / 2, y + (tab_h - dh) / 2, 0, sc, sc)
+        love.graphics.setColor(1, 1, 1, 1)
+      else
+        local f = A.font(A.FONT_BODY_BOLD, 9)
+        love.graphics.setFont(f)
+        col(focused and {1,1,1} or {0.65, 0.68, 0.72}, 1)
+        love.graphics.printf(tab.label, tx, y + (tab_h - f:getHeight()) / 2, tw, "center")
+      end
+    else
+      local base_size = focused and 11 or 10
+      local label_font = nil
+      for size = base_size, 7, -1 do
+        local f = A.font(A.FONT_BODY_BOLD, size)
+        if f:getWidth(tab.label) <= tw - 6 then
+          label_font = f
+          break
+        end
+      end
+      label_font = label_font or A.font(A.FONT_BODY_BOLD, 7)
+      love.graphics.setFont(label_font)
+      col(focused and {1,1,1} or {0.65, 0.68, 0.72}, 1)
+      love.graphics.printf(tab.label, tx,
+        y + (tab_h - label_font:getHeight()) / 2, tw, "center")
+    end
   end
 end
 
@@ -909,36 +1085,51 @@ function S.draw()
 
   local tab_y = Frame.TOP_H + 26
   draw_tab_bar(16, tab_y, W - 32)
+  -- MASCOT tab: header fisso (character select + mascot)
+  local is_mascot = (cur_tab == #TABS)
+  local header_h = 0
+  if is_mascot then
+    header_h = 190
+    draw_mascot_header(tab_y + 32 + 8, W, header_h, sel == 1, acc)
+  end
 
   local cx = 16
-  local cy = tab_y + 32 + 8
+  local cy = tab_y + 32 + 8 + header_h
   local cw = W - 32
   local ch = H - Frame.BOTTOM_H - cy - 4
 
   love.graphics.setScissor(cx, cy, cw, ch)
 
   local rows = cur_rows()
-  local total = 0
-  for _, r in ipairs(rows) do total = total + row_h(r) + ROW_GAP end
+  local first_idx = is_mascot and 2 or 1
 
-  local y_before = 0
-  for i = 1, sel - 1 do y_before = y_before + row_h(rows[i]) + ROW_GAP end
-  local row_bot = y_before + (rows[sel] and row_h(rows[sel]) or 0) + ROW_GAP
+  local total = 0
+  for i = first_idx, #rows do
+    total = total + row_h(rows[i]) + ROW_GAP
+  end
+
   local sc = S._scroll or 0
-  if y_before < sc then sc = y_before end
-  if row_bot > sc + ch then sc = row_bot - ch end
-  sc = math.max(0, math.min(math.max(0, total - ch), sc))
+  if sel >= first_idx then
+    local y_before = 0
+    for i = first_idx, sel - 1 do
+      y_before = y_before + row_h(rows[i]) + ROW_GAP
+    end
+    local row_bot = y_before +
+      (rows[sel] and row_h(rows[sel]) or 0) + ROW_GAP
+    if y_before < sc then sc = y_before end
+    if row_bot > sc + ch then sc = row_bot - ch end
+    sc = math.max(0, math.min(math.max(0, total - ch), sc))
+  end
   S._scroll = sc
 
   local ry = cy - sc
-  for i, r in ipairs(rows) do
-    local rh = row_h(r)
+  for i = first_idx, #rows do
+    local rh = row_h(rows[i])
     if ry + rh > cy - 4 and ry < cy + ch + 4 then
-      draw_row(r, cx, ry, cw, i == sel, acc, i)
+      draw_row(rows[i], cx, ry, cw, i == sel, acc, i)
     end
     ry = ry + rh + ROW_GAP
   end
-
   love.graphics.setScissor()
 
   if total > ch then
@@ -950,45 +1141,15 @@ function S.draw()
     love.graphics.rectangle("fill", W - 6, thumb_y, 3, thumb_h, 1, 1)
   end
 
-  -- Mascot HUD: visible on every tab when enabled.
-  -- SELECT toggles visibility for the current session.
-  if goku_get("show_mascot", true) and not S._mascot_hidden then
-    local variant = get_active_mascot()
-    local entry = ensure_mascot(variant)
-    if entry and (entry.img_r or entry.img_l) then
-      local img = entry.img_r or entry.img_l
-      local iw, ih = img:getDimensions()
-      local size_key = goku_get("size", "medium")
-      local target_h = (SIZE_MAP[size_key] or 112) * 0.55
-      local sc2 = target_h / ih
-      local dw = iw * sc2
-      local dh = ih * sc2
-      local float_y = math.sin(mascot.phase) * (goku_get("amp", 14) or 14) * 0.6
-      local bx = W - dw - 18
-      local by = H - Frame.BOTTOM_H - dh - 10 + float_y
-      local base_alpha = (cur_tab == #TABS) and 0.92 or 0.70
-      local transparency = goku_get("transparency", 100)
-      if type(transparency) ~= "number" then transparency = 100 end
-      local alpha = base_alpha * (transparency / 100)
-      if alpha > 0.01 then
-        if goku_get("shadow", true) then
-          col({0, 0, 0}, 0.35 * alpha)
-          love.graphics.ellipse("fill", bx + dw/2, by + dh + 3, dw * 0.42, 3)
-        end
-        col({1, 1, 1}, alpha)
-        love.graphics.draw(img, bx, by, 0, sc2, sc2)
-        col({1, 1, 1}, 1)
-      end
-    end
-  end
+    -- (mascot drawn only inside the tab header on CHARACTER tab)
 
   Frame.draw_top("FGD", "grid_dev")
   Frame.draw_bottom({
     { key = "up",     label = "Row" },
     { key = "l/r",    label = "Value" },
     { key = "l1",     label = "Tab" },
-    { key = "a",      label = "Run" },
-    { key = "select", label = S._mascot_hidden and "Goku on" or "Goku off" },
+    { key = "a",      label = "Select" },
+    { key = "select", label = S._mascot_hidden and "Char on" or "Char off" },
     { key = "b",      label = "Back" },
   })
   Modal.draw()
