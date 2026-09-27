@@ -26,7 +26,7 @@ S.defaults = {
     show_mem      = true,
     show_download = true,
   },
-  sound   = { enabled = false, volume = 70 },
+  sound   = { enabled = false, volume = 70, set = "default" },
   update  = { auto_catalog = true, auto_app_check = true },
   last_cwd = "/mnt/mmc",
 }

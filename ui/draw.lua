@@ -24,6 +24,21 @@ end
 
 -- ── Background ──────────────────────────────────────────────
 function D.bg()
+  -- FB dedicated backgrounds solo se view Final Bout è selezionata
+  do
+    local ok, State = pcall(require, "core.state")
+    local okS, Store = pcall(require, "core.settings_store")
+    if ok and okS and State._current_screen
+       and State.fb_view_used
+       and Store.get("ui", "mainmenu_view") == "finalbout" then
+      local ok2, FBG = pcall(require, "ui.fb_background")
+      if ok2 and FBG.draw_for_screen then
+        if FBG.draw_for_screen(State._current_screen, 0.72) then
+          return
+        end
+      end
+    end
+  end
   local th = theme()
   love.graphics.setColor(th.bg)
   love.graphics.rectangle("fill", 0, 0,

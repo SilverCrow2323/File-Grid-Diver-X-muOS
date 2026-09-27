@@ -1,5 +1,10 @@
--- ui/unlock_overlay.lua -- themed unlock message overlay (Final Bout).
--- Tre varianti: view / audio / both
+-- ui/unlock_overlay.lua -- themed unlock overlay (Final Bout).
+-- Tre varianti: view / audio / both.
+-- Trigger:
+--   1. Suona finalbout.ogg (sting breve) SUBITO
+--   2. Dopo sting_delay secondi parte il BGM dedicato
+--   3. Fine: view/audio -> stop_bgm; both -> fade_bgm su 2s
+-- Tutti e tre mostrano il logo Final Bout.
 local A = require("core.assets")
 local D = require("ui.draw")
 
@@ -7,34 +12,46 @@ local M = { active = false, kind = nil, t = 0 }
 
 local CONFIGS = {
   view = {
-    duration = 3.6,
-    acc  = {0.98, 0.78, 0.20},
-    acc2 = {0.98, 0.48, 0.10},
-    subtitle = "FINAL BOUT  //  ARENA MODE",
-    title    = "VIEW UNLOCKED",
-    line1    = "The stage is set.",
-    line2    = "L2 / R2 now cycle the menu view.",
-    sfx      = "finalbout",
+    skippable   = true,
+    duration    = 4.5,
+    sting_delay = 0.9,
+    acc         = {0.98, 0.78, 0.20},
+    acc2        = {0.98, 0.48, 0.10},
+    subtitle    = "FINAL BOUT  //  ARENA MODE",
+    title       = "VIEW UNLOCKED",
+    line1       = "The stage is set.",
+    line2       = "L2 / R2 now cycle the menu view.",
+    sting       = "finalbout",
+    bgm         = "fb/fbbgm0",
+    fade_out    = false,
   },
   audio = {
-    duration = 3.6,
-    acc  = {0.95, 0.40, 0.85},
-    acc2 = {0.30, 0.85, 0.95},
-    subtitle = "FINAL BOUT  //  SOUNDTRACK",
-    title    = "AUDIO MODE UNLOCKED",
-    line1    = "The arena sings.",
-    line2    = "All SFX now play in FB mode.",
-    sfx      = "finalbout",
+    skippable   = false,
+    duration    = 4.5,
+    sting_delay = 0.9,
+    acc         = {0.95, 0.40, 0.85},
+    acc2        = {0.30, 0.85, 0.95},
+    subtitle    = "FINAL BOUT  //  SOUNDTRACK",
+    title       = "AUDIO MODE UNLOCKED",
+    line1       = "The arena sings.",
+    line2       = "All SFX now play in FB mode.",
+    sting       = "finalbout",
+    bgm         = "fb/fbbgm2.",
+    fade_out    = false,
   },
   both = {
-    duration = 6.5,
-    acc  = {1.00, 0.85, 0.30},
-    acc2 = {0.95, 0.30, 0.90},
-    subtitle = "FINAL BOUT  //  100% COMPLETE",
-    title    = "CONGRATULATIONS",
-    line1    = "You mastered every code.",
-    line2    = "The Final Bout is yours.",
-    sfx      = "finalbout_griddev2",
+    skippable   = false,
+    duration    = 8.5,
+    sting_delay = 0.9,
+    acc         = {1.00, 0.85, 0.30},
+    acc2        = {0.95, 0.30, 0.90},
+    subtitle    = "FINAL BOUT  //  100% COMPLETE",
+    title       = "CONGRATULATIONS",
+    line1       = "You mastered every code.",
+    line2       = "The Final Bout is yours.",
+    sting       = "finalbout",
+    bgm         = "fb/fbbgm1",
+    fade_out    = true,
   },
 }
 
@@ -43,17 +60,25 @@ local function ease_out(p) return 1 - (1 - p) ^ 3 end
 function M.trigger(kind)
   local cfg = CONFIGS[kind]
   if not cfg then return end
-  M.active = true
-  M.kind   = kind
-  M.t      = 0
+  M.active       = true
+  M.kind         = kind
+  M.t            = 0
+  M._bgm_started = false
+  M._fading      = false
   local ok, SFX = pcall(require, "core.audio")
-  if ok and SFX.play then SFX.play(cfg.sfx) end
+  if ok and SFX.play and cfg.sting then
+    SFX.play(cfg.sting)
+  end
 end
 
 function M.skip()
-  M.active = false
-  M.kind   = nil
-  M.t      = 0
+  M.active       = false
+  M.kind         = nil
+  M.t            = 0
+  M._bgm_started = false
+  M._fading      = false
+  local ok, SFX = pcall(require, "core.audio")
+  if ok and SFX.stop_bgm then SFX.stop_bgm() end
 end
 
 function M.is_active() return M.active == true end
@@ -62,51 +87,42 @@ function M.update(dt)
   if not M.active then return end
   M.t = M.t + dt
   local cfg = CONFIGS[M.kind]
-  if cfg and M.t >= cfg.duration then M.skip() end
+  if not cfg then return end
+
+  local ok, SFX = pcall(require, "core.audio")
+
+  if not M._bgm_started and M.t >= (cfg.sting_delay or 0.5) then
+    M._bgm_started = true
+    if ok and SFX.play_bgm and cfg.bgm then
+      SFX.play_bgm(cfg.bgm, 0.85)
+    end
+  end
+
+  if cfg.fade_out and not M._fading and M.t >= cfg.duration - 2.0 then
+    M._fading = true
+    if ok and SFX.fade_bgm then SFX.fade_bgm(2.0) end
+  end
+
+  if M.t >= cfg.duration then
+    if not cfg.fade_out and ok and SFX.stop_bgm then
+      SFX.stop_bgm()
+    end
+    M.skip()
+  end
 end
 
-local function draw_emblem(kind, cx, cy, r, acc, acc2, alpha)
-  love.graphics.setLineWidth(2)
-  if kind == "view" then
-    local gap  = 3
-    local size = (r * 2 - gap) / 2
-    for i = 0, 1 do
-      for j = 0, 1 do
-        local x = cx - r + i * (size + gap)
-        local y = cy - r + j * (size + gap)
-        if i == 0 and j == 0 then
-          love.graphics.setColor(acc2[1], acc2[2], acc2[3], alpha)
-        else
-          love.graphics.setColor(acc[1], acc[2], acc[3], alpha * 0.55)
-        end
-        love.graphics.rectangle("line", x, y, size, size, 2, 2)
-      end
-    end
-  elseif kind == "audio" then
-    local n       = 9
-    local spacing = (r * 2) / (n + 1)
-    for i = 1, n do
-      local h = (0.35 + 0.65 * math.abs(math.sin(i * 1.7))) * r * 1.6
-      local x = cx - r + i * spacing
-      love.graphics.setColor(acc[1], acc[2], acc[3], alpha * 0.9)
-      love.graphics.rectangle("fill", x - 2, cy - h / 2, 4, h, 1, 1)
-    end
-  elseif kind == "both" then
-    local spikes = 8
-    local pts = {}
-    for i = 0, spikes * 2 - 1 do
-      local a  = (i / (spikes * 2)) * math.pi * 2 - math.pi / 2
-      local rr = (i % 2 == 0) and r * 1.2 or r * 0.5
-      pts[#pts + 1] = cx + math.cos(a) * rr
-      pts[#pts + 1] = cy + math.sin(a) * rr
-    end
-    love.graphics.setColor(acc[1], acc[2], acc[3], alpha)
-    love.graphics.polygon("line", pts)
-    love.graphics.setColor(acc2[1], acc2[2], acc2[3], alpha)
-    love.graphics.circle("line", cx, cy, r * 0.4)
-    love.graphics.circle("fill", cx, cy, r * 0.12)
-  end
-  love.graphics.setLineWidth(1)
+local function draw_fblogo(cx, y_top, max_w, alpha)
+  local logo = A.image("assets/images/fblogo.png")
+  if not logo then return false end
+  local iw, ih = logo:getDimensions()
+  local target_h = 40
+  local sc = target_h / ih
+  if iw * sc > max_w then sc = max_w / iw end
+  local dw = iw * sc
+  love.graphics.setColor(1, 1, 1, alpha)
+  love.graphics.draw(logo, cx - dw / 2, y_top, 0, sc, sc)
+  love.graphics.setColor(1, 1, 1, 1)
+  return true
 end
 
 local function draw_particles(W, H, t, alpha)
@@ -133,9 +149,8 @@ function M.draw()
   local t   = M.t
 
   local p = 1
-  if     t < 0.3          then p = t / 0.3
-  elseif t > dur - 0.5    then p = (dur - t) / 0.5
-  end
+  if     t < 0.3       then p = t / 0.3
+  elseif t > dur - 0.5 then p = (dur - t) / 0.5 end
   p = math.max(0, math.min(1, p))
   local ep = ease_out(p)
 
@@ -148,7 +163,7 @@ function M.draw()
     draw_particles(W, H, t, ep * 0.9)
   end
 
-  local cw, ch = 480, 250
+  local cw, ch = 480, 300
   local cx = (W - cw) / 2
   local cy = (H - ch) / 2 + (1 - ep) * 30
   local scale = 0.88 + 0.12 * ep
@@ -172,21 +187,21 @@ function M.draw()
 
   D.corner_ticks(cx + 12, cy + 12, cw - 24, ch - 24, 16, acc, ep)
 
-  draw_emblem(M.kind, W / 2, cy + 50, 24, acc, acc2, ep)
-
   love.graphics.setFont(A.font(A.FONT_MONO, 10))
   love.graphics.setColor(acc2[1], acc2[2], acc2[3], 0.90 * ep)
-  love.graphics.printf(cfg.subtitle, 0, cy + 92, W, "center")
+  love.graphics.printf(cfg.subtitle, 0, cy + 18, W, "center")
 
   local pulse = 0.9 + 0.1 * math.sin(t * 4)
-  love.graphics.setFont(A.font(A.FONT_TITLE, 28))
+  love.graphics.setFont(A.font(A.FONT_TITLE, 26))
   love.graphics.setColor(acc[1], acc[2], acc[3], 0.5 * ep * pulse)
-  love.graphics.printf(cfg.title, 2, cy + 114, W, "center")
+  love.graphics.printf(cfg.title, 2, cy + 48, W, "center")
   love.graphics.setColor(1, 1, 1, ep)
-  love.graphics.printf(cfg.title, 0, cy + 112, W, "center")
+  love.graphics.printf(cfg.title, 0, cy + 46, W, "center")
+
+  draw_fblogo(W / 2, cy + 94, cw - 80, ep)
 
   love.graphics.setColor(acc[1], acc[2], acc[3], 0.4 * ep)
-  love.graphics.rectangle("fill", cx + 80, cy + 152, cw - 160, 1)
+  love.graphics.rectangle("fill", cx + 80, cy + 150, cw - 160, 1)
 
   love.graphics.setFont(A.font(A.FONT_BODY_BOLD, 13))
   love.graphics.setColor(1, 1, 1, 0.95 * ep)
@@ -205,6 +220,13 @@ function M.draw()
   end
 
   love.graphics.pop()
+end
+
+function M.can_skip()
+  if not M.active then return false end
+  local cfg = CONFIGS[M.kind]
+  if not cfg then return false end
+  return cfg.skippable ~= false
 end
 
 return M

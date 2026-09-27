@@ -106,20 +106,6 @@ local TABS = {
   { id="interface", label="INTERFACE", accent=AMB, rows=function()
     return {
       { kind = "header", label = "APPEARANCE" },
-      enu("Theme", "colore dell'interfaccia",
-        "general", "theme",
-        {"blame","neon","toxic","blood","deepseek"}, "blame",
-        function(new)
-          State.theme_name = new
-          local ok, m = pcall(require, "themes.theme_"..new)
-          if ok and m then
-            State.theme = m
-            love.graphics.setBackgroundColor(m.bg)
-          end
-          Notify.show("success", "theme: "..new)
-        end,
-        function() return State.fb_view_used == true end
-      ),
       enu("Font family", "font alternativo",
         "ui", "font_family",
         {"auto","orbitron","oxanium","mono","default"}, "auto",
@@ -154,7 +140,7 @@ local TABS = {
         "general", "view", {"list","grid","compact","details"}, "list"),
       enu("Main hub view", "stile del main menu",
         "ui", "mainmenu_view",
-        {"console","rez","cartridge","marquee","hud"}, "console"),
+        {"console","hud","rez"}, "console"),
       tog("Dual panel", "due directory affiancate",
         "general", "dual", false),
     }

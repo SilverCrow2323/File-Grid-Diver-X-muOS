@@ -29,6 +29,7 @@ local State = require("core.state")
 local Input = require("core.input_map")
 local SFX   = require("core.audio")
 local UnlockOverlay = require("ui.unlock_overlay")   -- FGDX_UNLOCK_OVERLAY
+local Transition    = require("ui.transition")
 
 -- ------------------------------------------------------------
 -- 1. Screen registry
@@ -71,6 +72,7 @@ local SCREENS = {
   audio_player  = require("screens.audio_player"),
   video_player  = require("screens.video_player"),
   about_fb      = require("screens.about_fb"),
+  about_fb_game = require("screens.about_fb_game"),
 }
 
 -- Plugins: dynamic screens registered by the loader
@@ -175,7 +177,7 @@ end
 -- ------------------------------------------------------------
 -- 5. Switch screen
 -- ------------------------------------------------------------
-local function switch(name)
+local function switch_immediate(name)
   if has_screen() and type(current.leave) == "function" then
     pcall(current.leave)
   end
@@ -192,6 +194,7 @@ local function switch(name)
 
   current      = screen
   current_name = name
+  State._current_screen = name
 
   if has_screen() and type(current.enter) == "function" then
     local ok, err = pcall(current.enter)
@@ -205,6 +208,15 @@ end
 -- ------------------------------------------------------------
 function State.go(name, opts)
   opts = opts or {}
+
+  -- FGDX_RESET_FB_BUF_ON_ENTER: reset buffer codici FB quando entri in mainmenu
+  if name == "mainmenu" then
+    State.fb_audio_awaiting_y = false
+    FB_VIEW_BUF = {}
+    FB_BUF = {}
+    FB_AUDIO_X_BUF = 0
+    FB_AUDIO_Y_BUF = 0
+  end
 
   -- Refresh plugin screens (in case of rescan)
   sync_plugin_screens()
@@ -230,21 +242,23 @@ function State.go(name, opts)
     end
   end
 
-  switch(name)
+  Transition.start(switch_immediate, name, opts)
 end
 
 function State.back()
   local prev = table.remove(screen_stack)
   if prev and SCREENS[prev] then
-    State._returning = true
-    switch(prev)
-    State._returning = nil
+    Transition.start(function(name, opts)
+      State._returning = true
+      switch_immediate(name, opts)
+      State._returning = nil
+    end, prev)
     return
   end
   if current == SCREENS.mainmenu then
     love.event.quit()
   else
-    switch("mainmenu")
+    Transition.start(switch_immediate, "mainmenu")
   end
 end
 
@@ -371,6 +385,9 @@ local function fb_audio_check_x(name)
       FB_AUDIO_X_BUF = 0
       return true
     end
+  elseif name == "dpup" or name == "dpdown"
+      or name == "dpleft" or name == "dpright" then
+    -- FGDX: le frecce non azzerano il contatore
   else
     FB_AUDIO_X_BUF = 0
   end
@@ -593,6 +610,15 @@ dispatch_pad = function(name)
   end
   if not skip_default then play_sfx(name) end
 
+  -- pulse visivo su azioni e navigazione (non auto-repeat)
+  if name == "a" or name == "b" or name == "back"
+     or name == "dpup" or name == "dpdown"
+     or name == "dpleft" or name == "dpright"
+     or name == "leftshoulder" or name == "rightshoulder"
+     or name == "start" then
+    Transition.pulse()
+  end
+
   -- 6. Select universal: back to main menu unless screen reserves it
   if name == "back" and not modal_open() and not keyboard_open()
      and not (has_screen() and current.reserve_select) then
@@ -680,18 +706,18 @@ function love.load()
   if State.fb_audio_used then
     pcall(function() require("core.audio").set_fb_mode(true) end)
   end
-
-
-  -- Theme from settings
-  local theme_name = Store.get("general", "theme") or "blame"
-  local ok, mod = pcall(require, "themes.theme_" .. theme_name)
-  if ok and type(mod) == "table" then
-    State.theme_name = theme_name
-    State.theme = mod
-  else
-    State.theme_name = "blame"
-    State.theme = require("themes.theme_blame")
+  -- SFX Set: applica la preferenza salvata
+  do
+    local set_mode = Store.get("sound", "set") or "default"
+    pcall(function()
+      require("core.audio").set_fb_mode(set_mode == "finalbout")
+    end)
   end
+
+
+  -- Theme hardcoded to blame (unico tema supportato)
+  State.theme_name = "blame"
+  State.theme = require("themes.theme_blame")
 
   -- Assets + audio
   require("core.assets").init()
@@ -715,7 +741,7 @@ function love.load()
 
   log("INFO", "File-GD X started. Theme: " .. State.theme_name)
 
-  switch("boot")
+  switch_immediate("boot")
 
   -- Avvio in background di catalog refresh + app version check.
   do
@@ -733,6 +759,7 @@ end
 -- ------------------------------------------------------------
 function love.update(dt)
   UnlockOverlay.update(dt)                             -- FGDX_UNLOCK_OVERLAY
+  Transition.update(dt)
   State.t_ui = (State.t_ui or 0) + dt
 
   -- Poll del risultato update check (una volta ogni ~2s, max 5 tentativi)
@@ -800,6 +827,7 @@ function love.draw()
     local PI = require("ui.plugin_intro")
     if PI.is_active() then
       PI.draw()
+      Transition.draw()
       return
     end
   end
@@ -830,6 +858,8 @@ function love.draw()
   if UnlockOverlay.is_active() then                     -- FGDX_UNLOCK_OVERLAY
     UnlockOverlay.draw()
   end
+
+  Transition.draw()
 end
 
 function love.focus(f)
@@ -846,7 +876,9 @@ local held_buttons = {}
 function love.gamepadpressed(_, name)
   -- Unlock overlay: any button skips it and is consumed
   if UnlockOverlay.is_active() then                    -- FGDX_UNLOCK_OVERLAY
-    UnlockOverlay.skip()
+    if UnlockOverlay.can_skip and UnlockOverlay.can_skip() then
+      UnlockOverlay.skip()
+    end
     return
   end
 
@@ -887,10 +919,17 @@ function love.gamepadpressed(_, name)
 
   if not State.dev_unlocked and not State.konami_used and fb_check(name) then
     State.konami_used = true
+    FB_VIEW_BUF = {}   -- sblocca subito dopo la stessa sequenza per FB view
     FB.trigger(function()
       State.dev_unlocked = true
+      State.fb_view_used = true
+      local okS, Store = pcall(require, "core.settings_store")
+      if okS then
+        Store.set("dev", "fb_view_unlocked", true)
+        Store.save()
+      end
       local ok, N = pcall(require, "ui.notify")
-      if ok then N.show("success", "GRiD-Dev unlocked -- Settings > SYSTEM", 4.0) end
+      if ok then N.show("success", "GRiD-Dev + Final Bout view unlocked", 4.0) end
     end)
     return
   end
@@ -899,7 +938,10 @@ function love.gamepadpressed(_, name)
   if not State.fb_view_used and fb_view_check(name) then
     State.fb_view_used = true
     local ok, Store = pcall(require, "core.settings_store")
-    if ok then Store.set("dev", "fb_view_unlocked", true); Store.save() end
+    if ok then
+      Store.set("dev", "fb_view_unlocked", true)
+      Store.save()
+    end
     local kind = State.fb_audio_used and "both" or "view"
     UnlockOverlay.trigger(kind)                        -- FGDX_UNLOCK_OVERLAY
     return
@@ -915,9 +957,17 @@ function love.gamepadpressed(_, name)
     State.fb_audio_awaiting_y = false
     State.fb_audio_used = true
     local ok, Store = pcall(require, "core.settings_store")
-    if ok then Store.set("dev", "fb_audio_unlocked", true); Store.save() end
+    if ok then
+      Store.set("dev", "fb_audio_unlocked", true)
+      Store.set("sound", "enabled", true)
+      Store.set("sound", "set", "finalbout")
+      Store.save()
+    end
     local ok2, SFX = pcall(require, "core.audio")
-    if ok2 and SFX.set_fb_mode then SFX.set_fb_mode(true) end
+    if ok2 then
+      if SFX.set_enabled then SFX.set_enabled(true) end
+      if SFX.set_fb_mode  then SFX.set_fb_mode(true)  end
+    end
     local kind = State.fb_view_used and "both" or "audio"
     UnlockOverlay.trigger(kind)                        -- FGDX_UNLOCK_OVERLAY
     return
@@ -1022,7 +1072,9 @@ local K2P = {
 function love.keypressed(k)
   -- Unlock overlay: any key skips it
   if UnlockOverlay.is_active() then                    -- FGDX_UNLOCK_OVERLAY
-    UnlockOverlay.skip()
+    if UnlockOverlay.can_skip and UnlockOverlay.can_skip() then
+      UnlockOverlay.skip()
+    end
     return
   end
 
@@ -1101,13 +1153,58 @@ function love.keypressed(k)
     if not State.dev_unlocked and not State.konami_used
          and current_name == "mainmenu" and fb_check(pad) then
       State.konami_used = true
+      FB_VIEW_BUF = {}
       FB.trigger(function()
         State.dev_unlocked = true
-        local ok, N = pcall(require, "ui.notify")
-        if ok then N.show("success", "GRiD-Dev unlocked -- Settings > SYSTEM", 4.0) end
+      State.fb_view_used = true
+      local okS, Store = pcall(require, "core.settings_store")
+      if okS then
+        Store.set("dev", "fb_view_unlocked", true)
+        Store.save()
+      end
+      local ok, N = pcall(require, "ui.notify")
+      if ok then N.show("success", "GRiD-Dev + Final Bout unlocked", 4.0) end
       end)
       return
 end
+    -- FGDX_FB_VIEW: code 1 (view) from keyboard
+    if not State.fb_view_used and fb_view_check(pad) then
+      State.fb_view_used = true
+      local okS, Store = pcall(require, "core.settings_store")
+      if okS then
+        Store.set("dev", "fb_view_unlocked", true)
+        Store.save()
+      end
+      local kind = State.fb_audio_used and "both" or "view"
+      UnlockOverlay.trigger(kind)
+      return
+    end
+
+    -- FGDX_FB_AUDIO: code 2 (8x X then 8x Y) from keyboard
+    if not State.fb_audio_used and fb_audio_check_x(pad) then
+      State.fb_audio_awaiting_y = true
+      return
+    end
+    if State.fb_audio_awaiting_y and fb_audio_check_y(pad) then
+      State.fb_audio_awaiting_y = false
+      State.fb_audio_used = true
+      local okS, Store = pcall(require, "core.settings_store")
+      if okS then
+        Store.set("dev", "fb_audio_unlocked", true)
+        Store.set("sound", "enabled", true)
+        Store.set("sound", "set", "finalbout")
+        Store.save()
+      end
+      local okS2, SFX = pcall(require, "core.audio")
+      if okS2 then
+        if SFX.set_enabled then SFX.set_enabled(true) end
+        if SFX.set_fb_mode  then SFX.set_fb_mode(true)  end
+      end
+      local kind = State.fb_view_used and "both" or "audio"
+      UnlockOverlay.trigger(kind)
+      return
+    end
+
     -- Directional -> hat
     local DIR = { dpup="up", dpdown="down", dpleft="left", dpright="right" }
     if DIR[pad] then
@@ -1140,7 +1237,9 @@ end
 package.loaded["main"] = {
   get_current      = function() return current end,
   get_current_name = function() return current_name end,
-  switch           = switch,
+  switch           = function(name, opts)
+    Transition.start(switch_immediate, name, opts)
+  end,
   register_screen  = function(key, screen)
     if type(key) == "string" and type(screen) == "table" then
       SCREENS[key] = screen

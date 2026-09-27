@@ -54,10 +54,36 @@ end
 
 function M.play(name, vol)
   if not enabled then return end
+  local orig_name = name
   if M._fb_mode and M._FB_MAP[name] then name = M._FB_MAP[name] end
+
   local base = cache[name]
-  if not base then return end
-  -- clone so rapid-fire taps overlap cleanly
+  if not base then
+    local src, ext = try_load(name)
+    if src then
+      cache[name] = src
+      base = src
+      print("[SFX] loaded on demand: " .. name .. " (" .. tostring(ext) .. ")")
+    elseif name ~= orig_name then
+      -- fallback: il nome FB non esiste, prova il nome originale
+      base = cache[orig_name]
+      if not base then
+        local s2, e2 = try_load(orig_name)
+        if s2 then
+          cache[orig_name] = s2
+          base = s2
+          print("[SFX] FB fallback: " .. orig_name .. " (" .. tostring(e2) .. ")")
+        end
+      end
+      if not base then
+        print("[SFX] missing: " .. name .. " (fallback " .. orig_name .. " anche mancante)")
+        return
+      end
+    else
+      return
+    end
+  end
+
   local ok, clone = pcall(function() return base:clone() end)
   if ok and clone then
     clone:setVolume((vol or 1.0) * volume)
@@ -72,7 +98,7 @@ M._FB_MAP = {
   nav            = "fb/navfb",
   nav2           = "fb/nav2fb",
   nav3           = "fb/nav2fb",
-  enter          = "fb/selectfb",
+  enter          = "finalbout",
   back           = "fb/backfb",
   error          = "fb/errorfb",
   success        = "fb/select2fb",
@@ -121,7 +147,6 @@ function M.play_bgm(name, vol)
 
   local base = cache[name]
   if not base then
-    -- Streamed OGG first (long tracks), static WAV fallback.
     local candidates = {
       { path = "assets/sfx/" .. name .. ".ogg", mode = "stream", ext = "ogg" },
       { path = "assets/sfx/" .. name .. ".wav", mode = "static", ext = "wav" },

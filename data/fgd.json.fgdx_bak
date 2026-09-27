@@ -1,0 +1,43 @@
+{
+  "dev": {
+    "fb_audio_unlocked": true,
+    "persist_unlock": false
+  },
+  "general": {
+    "font_scale": 1,
+    "grid_cols": 5,
+    "grid_rows": 3,
+    "show_hidden": false,
+    "sort_asc": true,
+    "theme": "blame",
+    "view": "list"
+  },
+  "last_cwd": "/mnt/mmc",
+  "sort": {
+    "folders_first": true,
+    "key": "name"
+  },
+  "sound": {
+    "enabled": false,
+    "volume": 70
+  },
+  "ui": {
+    "font_family": "auto",
+    "font_scale": 1.4,
+    "footer_h": 40,
+    "header_h": 48,
+    "header_logo": true,
+    "mainmenu_view": "rez",
+    "particles": true,
+    "show_battery": true,
+    "show_clock": true,
+    "show_download": true,
+    "show_fps": false,
+    "show_mem": true,
+    "show_wifi": true
+  },
+  "update": {
+    "auto_app_check": true,
+    "auto_catalog": true
+  }
+}
