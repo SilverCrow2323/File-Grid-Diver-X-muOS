@@ -31,6 +31,15 @@ S.defaults = {
   sound   = { enabled = false, volume = 70, set = "default" },
   update  = { auto_catalog = true, auto_app_check = true },
   last_cwd = "/mnt/mmc",
+  goku = {
+    show_mascot  = true,
+    mascot       = "goku",
+    transparency = 100,
+    size         = "medium",
+    amp          = 14,
+    speed        = "normal",
+    shadow       = true,
+  },
 }
 
 local function deep_copy(t)

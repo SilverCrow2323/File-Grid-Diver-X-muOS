@@ -23,7 +23,7 @@ local function col(c, a) love.graphics.setColor(c[1], c[2], c[3], a or 1) end
 local ITEMS = {
   { key = "BATTLE",     sub = "file explorer",     target = "filex_home", colour = ORO,  icon = "battle" },
   { key = "TOURNAMENT", sub = "system cockpit",    target = "device",     colour = CYA,  icon = "tournament" },
-  { key = "BUILD UP",   sub = "storage & cleanup", target = "storage",    colour = VERDE,icon = "buildup" },
+  { key = "PLUGINS",    sub = "extension store",   target = "plugins",    colour = VERDE,icon = "buildup" },
   { key = "OPTIONS",    sub = "settings",          target = "settings",   colour = RED,  icon = "options" },
 }
 local N = #ITEMS

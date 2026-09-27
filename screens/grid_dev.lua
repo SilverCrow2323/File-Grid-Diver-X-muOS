@@ -48,22 +48,33 @@ local function tog(label, hint, sec, key, default, on_change)
   }
 end
 
-local function enu(label, hint, sec, key, options, default, on_change)
+local function enu(label, hint, sec, key, options, default, on_change, portrait_fn)
+  -- options may be a list OR a function returning a list (dynamic options)
+  local function get_opts()
+    if type(options) == "function" then return options() end
+    return options
+  end
   return {
     kind = "enum", label = label, hint = hint,
+    portrait_fn = portrait_fn,
+    get_opts = get_opts,
     get = function()
       local v = Store.get(sec, key)
       if v == nil or v == "" then return default end
       return v
     end,
     cycle = function(dir)
+      local opts = get_opts()
       local cur = Store.get(sec, key)
       if cur == nil or cur == "" then cur = default end
+      local found = false
+      for _, v in ipairs(opts) do if v == cur then found = true end end
+      if not found then cur = opts[1] end
       local i = 1
-      for k, v in ipairs(options) do if v == cur then i = k end end
-      i = ((i - 1 + dir) % #options + #options) % #options + 1
-      Store.set(sec, key, options[i]); Store.save()
-      if on_change then on_change(options[i]) end
+      for k, v in ipairs(opts) do if v == cur then i = k end end
+      i = ((i - 1 + dir) % #opts + #opts) % #opts + 1
+      Store.set(sec, key, opts[i]); Store.save()
+      if on_change then on_change(opts[i]) end
     end,
   }
 end
@@ -208,17 +219,29 @@ local TABS = {
       end, true),
   }},
 
-  { id="goku", label="GOKU SSJ4", accent=ORG, rows=function()
+  { id="goku", label="MASCOT", accent=ORG, rows=function()
     local r = {}
     r[#r+1] = { kind = "mascot_preview", label = "Mascot preview" }
-    r[#r+1] = tog("Show mascot", "show SSJ4 mascot", "goku", "show_mascot", true)
-    r[#r+1] = enu("Sprite size", "sprite size", "goku", "size",
-      {"small", "medium", "large", "huge"}, "medium")
-    r[#r+1] = num("Float amplitude", "float amplitude", "goku", "amp",
-      0, 30, 2, function(v) return v .. " px" end, 14)
-    r[#r+1] = enu("Float speed", "float speed", "goku", "speed",
-      {"very_slow", "slow", "normal", "fast", "wild"}, "normal")
-    r[#r+1] = tog("Ground shadow", "ground shadow", "goku", "shadow", true)
+    r[#r+1] = tog("Show mascot", "display the mascot in the corner",
+      "goku", "show_mascot", true)
+    r[#r+1] = enu("Mascot", "character to display",
+      "goku", "mascot", mascot_options, "goku", nil,
+      function(name)
+        local v = MASCOT_VARIANTS[name]
+        return v and v.portrait or nil
+      end)
+    r[#r+1] = num("Transparency", "0% invisible, 100% opaque",
+      "goku", "transparency", 0, 100, 5,
+      function(v) return v .. "%" end, 100)
+    r[#r+1] = enu("Sprite size", "size of the mascot",
+      "goku", "size", {"small", "medium", "large", "huge"}, "medium")
+    r[#r+1] = num("Float amplitude", "vertical oscillation",
+      "goku", "amp", 0, 30, 2,
+      function(v) return v .. " px" end, 14)
+    r[#r+1] = enu("Float speed", "oscillation speed",
+      "goku", "speed", {"very_slow", "slow", "normal", "fast", "wild"}, "normal")
+    r[#r+1] = tog("Ground shadow", "cast a shadow below the mascot",
+      "goku", "shadow", true)
     return r
   end },
 }
@@ -232,10 +255,38 @@ local sel = 1
 local t = 0
 local last_dt = 0.016
 local tog_anim = {}
-local mascot = { img_l = nil, img_r = nil, tried = false, phase = 0 }
+local mascot = { phase = 0 }
 
 local SIZE_MAP = { small=72, medium=112, large=144, huge=180 }
 local SPEED_MAP = { very_slow=0.7, slow=1.0, normal=1.4, fast=2.0, wild=3.0 }
+
+-- Mascot variant catalog. `unlock`:
+--   nil        -> always available
+--   "fb_view"  -> requires State.fb_view_used
+--   "fb_audio" -> requires State.fb_audio_used
+local MASCOT_VARIANTS = {
+  goku = {
+    left     = "assets/images/fb/sprites/goku.png",
+    right    = "assets/images/fb/sprites/goku.png",
+    portrait = "assets/images/fb/small_portraits/goku.png",
+    unlock   = nil,
+  },
+  goku_ssj2 = {
+    left     = "assets/images/fb/sprites/gokussj2.png",
+    right    = "assets/images/fb/sprites/gokussj2.png",
+    portrait = "assets/images/fb/small_portraits/gokussj2.png",
+    unlock   = "fb_view",
+  },
+  goku_ssj4 = {
+    left     = "assets/images/gokussj4_sx.png",
+    right    = "assets/images/gokussj4_dx.png",
+    portrait = "assets/images/fb/small_portraits/gokussj4.png",
+    unlock   = "fb_audio",
+  },
+}
+local MASCOT_ORDER = { "goku", "goku_ssj2", "goku_ssj4" }
+
+local mascot_cache = {}
 
 local function goku_get(key, default)
   local v = Store.get("goku", key)
@@ -243,19 +294,49 @@ local function goku_get(key, default)
   return v
 end
 
-local function ensure_mascots()
-  if mascot.tried then return end
-  mascot.tried = true
-  local sx = A.image("assets/images/gokussj4_sx.png")
-  if sx then
-    local w, h = sx:getDimensions()
-    mascot.img_l = { img = sx, w = w, h = h }
+local function mascot_available(name)
+  local v = MASCOT_VARIANTS[name]
+  if not v then return false end
+  if not v.unlock then return true end
+  local ok, State = pcall(require, "core.state")
+  if not ok then return false end
+  if v.unlock == "fb_view"  then return State.fb_view_used  == true end
+  if v.unlock == "fb_audio" then return State.fb_audio_used == true end
+  return false
+end
+
+local function mascot_options()
+  local opts = {}
+  for _, name in ipairs(MASCOT_ORDER) do
+    if mascot_available(name) then opts[#opts + 1] = name end
   end
-  local dx = A.image("assets/images/gokussj4_dx.png")
-  if dx then
-    local w, h = dx:getDimensions()
-    mascot.img_r = { img = dx, w = w, h = h }
+  if #opts == 0 then opts[1] = "goku" end
+  return opts
+end
+
+local function get_active_mascot()
+  local v = goku_get("mascot", "goku")
+  if type(v) ~= "string" or not mascot_available(v) then
+    return "goku"
   end
+  return v
+end
+
+local function ensure_mascot(name)
+  if mascot_cache[name] ~= nil then return mascot_cache[name] or nil end
+  local v = MASCOT_VARIANTS[name]
+  if not v then return nil end
+  local l = A.image(v.left)
+  local r = A.image(v.right) or l
+  if not l and not r then
+    mascot_cache[name] = false
+    return nil
+  end
+  local entry = { img_l = l, img_r = r }
+  if l then entry.w_l, entry.h_l = l:getDimensions() end
+  if r then entry.w_r, entry.h_r = r:getDimensions() end
+  mascot_cache[name] = entry
+  return entry
 end
 
 -- ============================================================
@@ -269,7 +350,7 @@ function S.enter()
     sel = 1
     S._scroll = 0
   end
-  ensure_mascots()
+  ensure_mascot(get_active_mascot())
   local ok, SFX = pcall(require, "core.audio")
   if ok and SFX.play then SFX.play("gokustep") end
 end
@@ -496,7 +577,7 @@ local function draw_badge(cx, cy, r, accent, focused, kind)
   love.graphics.setLineWidth(1)
 end
 
-local function draw_enum(x_right, cy, value, accent, focused)
+local function draw_enum(x_right, cy, value, accent, focused, portrait_path)
   local f = A.font(A.FONT_MONO, 12)
   love.graphics.setFont(f)
   local tw = f:getWidth(value)
@@ -504,8 +585,32 @@ local function draw_enum(x_right, cy, value, accent, focused)
   local gap = 6
   local pill_h = 22
   local pill_w = math.max(60, tw + 22)
-  local total = r*2 + gap + pill_w + gap + r*2
+
+  local portrait_w = 0
+  local portrait_img = nil
+  if portrait_path and portrait_path ~= "" then
+    local img = A.image(portrait_path)
+    if img then
+      portrait_img = img
+      portrait_w = 40
+    end
+  end
+
+  local total = r*2 + gap + pill_w + gap + r*2 + portrait_w
   local start_x = x_right - total
+
+  if portrait_img then
+    local iw, ih = portrait_img:getDimensions()
+    local sc = 30 / math.max(iw, ih)
+    local dw, dh = iw * sc, ih * sc
+    local px = start_x + 4
+    local py = cy - dh / 2
+    love.graphics.setColor(1, 1, 1, focused and 1 or 0.7)
+    love.graphics.draw(portrait_img, px, py, 0, sc, sc)
+    love.graphics.setColor(1, 1, 1, 1)
+    start_x = start_x + portrait_w
+  end
+
   draw_badge(start_x + r, cy, r, accent, focused, "minus")
   local px = start_x + r*2 + gap
   col({accent[1]*0.15, accent[2]*0.15, accent[3]*0.15}, focused and 1 or 0.55)
@@ -591,7 +696,7 @@ local function draw_mascot_preview(x, y, w, h, focused)
   love.graphics.print("Goku SSJ4 sprite", x + 14, y + 26)
 
   -- preview the sprite
-  ensure_mascots()
+  ensure_mascot(get_active_mascot())
   local side = goku_get("side", "left")
   local entry = (side == "left") and mascot.img_l or mascot.img_r
   entry = entry or mascot.img_l or mascot.img_r
@@ -687,7 +792,12 @@ local function draw_row(r, x, y, w, focused, accent, idx)
     draw_toggle(right_x - 28, y + h/2, 56, 26, on,
       "g" .. cur_tab .. "_" .. idx)
   elseif r.kind == "enum" then
-    draw_enum(right_x, y + h/2, tostring(r.get()), accent, focused)
+    local portrait = nil
+    if r.portrait_fn then
+      local ok, p = pcall(r.portrait_fn, tostring(r.get()))
+      if ok then portrait = p end
+    end
+    draw_enum(right_x, y + h/2, tostring(r.get()), accent, focused, portrait)
   elseif r.kind == "slider" then
     draw_slider(x + 16, y + 32, w - 32, r.get(),
       r.minv, r.maxv, r.fmt, focused, accent)
@@ -822,28 +932,35 @@ function S.draw()
     love.graphics.rectangle("fill", W - 6, thumb_y, 3, thumb_h, 1, 1)
   end
 
-  -- SSJ4 mascot HUD: visible on every tab when enabled.
+  -- Mascot HUD: visible on every tab when enabled.
   -- SELECT toggles visibility for the current session.
   if goku_get("show_mascot", true) and not S._mascot_hidden then
-    ensure_mascots()
-    local entry = mascot.img_r or mascot.img_l
-    if entry then
+    local variant = get_active_mascot()
+    local entry = ensure_mascot(variant)
+    if entry and (entry.img_r or entry.img_l) then
+      local img = entry.img_r or entry.img_l
+      local iw, ih = img:getDimensions()
       local size_key = goku_get("size", "medium")
       local target_h = (SIZE_MAP[size_key] or 112) * 0.55
-      local sc2 = target_h / entry.h
-      local dw = entry.w * sc2
-      local dh = entry.h * sc2
+      local sc2 = target_h / ih
+      local dw = iw * sc2
+      local dh = ih * sc2
       local float_y = math.sin(mascot.phase) * (goku_get("amp", 14) or 14) * 0.6
       local bx = W - dw - 18
       local by = H - Frame.BOTTOM_H - dh - 10 + float_y
-      local alpha = (cur_tab == 6) and 0.92 or 0.70
-      if goku_get("shadow", true) then
-        col({0, 0, 0}, 0.35 * alpha)
-        love.graphics.ellipse("fill", bx + dw/2, by + dh + 3, dw * 0.42, 3)
+      local base_alpha = (cur_tab == #TABS) and 0.92 or 0.70
+      local transparency = goku_get("transparency", 100)
+      if type(transparency) ~= "number" then transparency = 100 end
+      local alpha = base_alpha * (transparency / 100)
+      if alpha > 0.01 then
+        if goku_get("shadow", true) then
+          col({0, 0, 0}, 0.35 * alpha)
+          love.graphics.ellipse("fill", bx + dw/2, by + dh + 3, dw * 0.42, 3)
+        end
+        col({1, 1, 1}, alpha)
+        love.graphics.draw(img, bx, by, 0, sc2, sc2)
+        col({1, 1, 1}, 1)
       end
-      col({1, 1, 1}, alpha)
-      love.graphics.draw(entry.img, bx, by, 0, sc2, sc2)
-      col({1, 1, 1}, 1)
     end
   end
 
