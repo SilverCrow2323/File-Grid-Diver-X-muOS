@@ -121,6 +121,14 @@ package() {
     [ -d "$d" ] && cp -a "$d" "$STAGE/"
   done
 
+  # ---- tools/ e' un mix: mpv_ipc.py e pdf_render.py sono richiamati a
+  # runtime da services/media_player.lua e services/doc_engine.lua, ma
+  # build_native.sh / check_syntax.sh / run_tests.sh / gen_glyph.py sono
+  # solo per lo sviluppatore -- non servono sul dispositivo e finivano
+  # comunque dentro ogni .muxapp spedito.
+  rm -f "$STAGE/tools/build_native.sh" "$STAGE/tools/check_syntax.sh" \
+        "$STAGE/tools/run_tests.sh" "$STAGE/tools/gen_glyph.py"
+
   # ---- plugins/ (escludendo sempre pdf_lib dal giro generale) ----
   mkdir -p "$STAGE/plugins"
   for f in plugins/*; do
@@ -174,7 +182,7 @@ package() {
 
   # ---- cleanup ----
   find "$STAGE" -type f \( \
-       -name '*.tmp' -o -name '*.bak' -o -name '*.fgd.bak' \
+       -name '*.tmp' -o -name '*.bak' -o -name '*.fgd.bak' -o -name '*.fgdx_bak' \
     -o -name '*.broken' -o -name '*.old' -o -name '*.orig' \
     -o -name '.DS_Store' -o -name 'Thumbs.db' -o -name '*.pyc' \
     \) -delete 2>/dev/null || true

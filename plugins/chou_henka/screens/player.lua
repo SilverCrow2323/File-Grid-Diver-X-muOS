@@ -30,6 +30,7 @@ local track_ui = nil   -- { open=, tab="audio"|"sub", sel=, audio={}, subs={} }
 local media_info = {}
 local info_poll = 0
 local INFO_RATE = 2.0
+local pending_resume = nil -- resume entry waiting for duration to become known
 
 local function col(c,a) love.graphics.setColor(c[1],c[2],c[3],a or 1) end
 local function basename(p) return (p or ""):match("([^/]+)$") or p or "?" end
@@ -63,6 +64,7 @@ function M.play(p)
   position, duration, paused = 0, 0, false
   video_returned = false
   media_info = {}
+  pending_resume = nil
 
   if kind == "audio" then
     local ok, err = PB.start_audio(path)
@@ -71,18 +73,11 @@ function M.play(p)
       playing = false
     else
       playing = true
-      for _ = 1, 20 do
-        love.timer.sleep(0.05)
-        local d = PB.get_prop("duration")
-        if type(d) == "number" and d > 0 then duration = d; break end
-      end
-      -- resume
-      local rs = WS.get_resume(path)
-      if rs and rs.pos and rs.pos > 5 then
-        pcall(function() PB.seek(rs.pos) end)
-        position = rs.pos
-        Notify.show("info", "Riprendo da " .. htime(rs.pos))
-      end
+      -- mpv doesn't know the duration the instant the file starts loading.
+      -- The regular poll in M.update() (<= POLL_RATE, 0.35s) picks it up
+      -- and applies the resume seek then -- this used to block the whole
+      -- app for up to 1s here with a love.timer.sleep() busy-wait.
+      pending_resume = WS.get_resume(path)
       WS.touch_recent(path)
       refresh_info()
     end
@@ -119,7 +114,18 @@ function M.update(dt)
       local d = PB.get_prop("duration")
       local pa = PB.get_prop("pause")
       if type(p) == "number" then position = p end
-      if type(d) == "number" and d > 0 then duration = d end
+      if type(d) == "number" and d > 0 then
+        duration = d
+        if pending_resume then
+          local rs = pending_resume
+          pending_resume = nil
+          if rs.pos and rs.pos > 5 and rs.pos < duration then
+            pcall(function() PB.seek(rs.pos) end)
+            position = rs.pos
+            Notify.show("info", "Riprendo da " .. htime(rs.pos))
+          end
+        end
+      end
       if type(pa) == "boolean" then paused = pa end
       if PB.get_prop("idle-active") then
         playing, paused, position = false, false, 0

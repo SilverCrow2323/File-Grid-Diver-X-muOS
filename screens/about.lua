@@ -14,10 +14,22 @@ local W, H = 640, 480
 -- ============================================================
 --  Project metadata
 -- ============================================================
+-- Same version.txt main.lua reads at boot into State.app_version --
+-- read it here too instead of a second hardcoded copy that only one
+-- of the two ever gets updated (it happened: this said v1.5.0 while
+-- version.txt and the actual release were already at v1.5.2).
+local function read_version()
+  local f = io.open("version.txt", "r")
+  if not f then return "v1.5.0" end
+  local v = (f:read("*l") or ""):gsub("%s+", "")
+  f:close()
+  return (v ~= "" and v) or "v1.5.0"
+end
+
 local ABOUT = {
   product  = "File-GD X",
   tagline  = "the system console for a muOS handheld",
-  version  = "v1.5.0",
+  version  = read_version(),
   project  = "SPDW Factory",
   author   = "sirpips",
   aka      = "aka SilverCrow2323",

@@ -12,6 +12,19 @@ local function cache_path(kind, tmdb_id)
   return M.CACHE_DIR .. "/" .. kind .. "_" .. tostring(tmdb_id) .. ".json"
 end
 
+-- Percent-encode for a URL query component (RFC 3986). The previous
+-- version just deleted every non-alphanumeric character, which silently
+-- mangled any accented title ("Amélie" -> "Amlie") and broke titles
+-- containing "&" (e.g. "Fast & Furious" was sent as two bogus query
+-- params instead of one search term).
+local function url_encode(s)
+  s = tostring(s or "")
+  s = s:gsub("([^%w %-%_%.%~])", function(c)
+    return string.format("%%%02X", string.byte(c))
+  end)
+  return (s:gsub(" ", "+"))
+end
+
 local function curl(url, out)
   sh.exec("mkdir -p " .. sh.shq(M.CACHE_DIR))
   local cmd = "curl -sL --max-time 8 -o " .. sh.shq(out) .. " " .. sh.shq(url)
@@ -39,10 +52,8 @@ end
 function M.search_movie(query, year)
   local ok, err = M.available()
   if not ok then return nil, err end
-  local q = query:gsub("[^%w%s]", "")
-  q = q:gsub("%s+", "+")
   local url = "https://api.themoviedb.org/3/search/movie?api_key=" ..
-    M.api_key() .. "&query=" .. q ..
+    url_encode(M.api_key()) .. "&query=" .. url_encode(query) ..
     (year and ("&year=" .. tostring(year)) or "")
   local tmp = "/tmp/ch_tmdb_search.json"
   if not curl(url, tmp) then return nil, "network error" end

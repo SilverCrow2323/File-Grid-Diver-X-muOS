@@ -107,6 +107,21 @@ local scan_job = nil
 
 function M.is_scanning() return scan_job ~= nil end
 
+-- Runtime probe: does this device's `stat` support the GNU `-c` format
+-- we use to grab size+mtime in one shot? Mirrors the same check
+-- services/fs.lua already had to add for file listings on BusyBox
+-- builds -- this scanner just never inherited it, so on a non-GNU
+-- `stat` it used to fail 100% of the time, silently (find|stat piped
+-- to /dev/null on error, `|| true` swallowing the rest) and leave the
+-- library empty with no indication why.
+local _stat_gnu = nil
+local function stat_is_gnu()
+  if _stat_gnu ~= nil then return _stat_gnu end
+  local out = sh.read("stat -c '%n|%F|%s|%Y|%A' / 2>/dev/null")
+  _stat_gnu = (out ~= nil and out:match("^/|") ~= nil)
+  return _stat_gnu
+end
+
 function M.start_scan()
   if scan_job then return false, "already scanning" end
   local sources = CFG.get("sources") or {}
@@ -117,6 +132,7 @@ function M.start_scan()
   local done   = "/tmp/ch_" .. id .. ".done"
   local script = "/tmp/ch_" .. id .. ".sh"
   local depth  = CFG.get("library", "scan_max_depth") or 6
+  local gnu    = stat_is_gnu()
 
   local L = {
     "#!/bin/sh", "set +e",
@@ -126,8 +142,18 @@ function M.start_scan()
   }
   for _, src in ipairs(sources) do
     if src and src ~= "" then
-      L[#L+1] = "find " .. sh.shq(src) .. " -maxdepth " .. depth ..
-        " -type f -exec stat -c '%s|%Y|%n' {} + 2>/dev/null | tr '|' '\\t' >> \"$OUT\" || true"
+      if gnu then
+        L[#L+1] = "find " .. sh.shq(src) .. " -maxdepth " .. depth ..
+          " -type f -exec stat -c '%s|%Y|%n' {} + 2>/dev/null | tr '|' '\\t' >> \"$OUT\" || true"
+      else
+        -- No GNU stat: size/mtime aren't recoverable this way (same
+        -- limitation services/fs.lua's ls-based fallback documents),
+        -- but the files still get indexed with size=0/mtime=0 instead
+        -- of the scan silently returning nothing at all.
+        L[#L+1] = "find " .. sh.shq(src) .. " -maxdepth " .. depth ..
+          " -type f 2>/dev/null | while IFS= read -r fgdxf; do " ..
+          "printf '0\\t0\\t%s\\n' \"$fgdxf\"; done >> \"$OUT\" || true"
+      end
     end
   end
   L[#L+1] = 'touch "$DONE"'
@@ -238,7 +264,21 @@ function M.search(query)
   query = (query or ""):lower()
   query = query:gsub("^%s+", ""):gsub("%s+$", "")
   if query == "" then return db.tracks end
+
+  -- 1) Substring match first. A "type to filter" box is expected to
+  --    narrow the list; the old subsequence-only matcher below made a
+  --    single keystroke match nearly every file that happened to
+  --    contain that letter anywhere, in any order.
   local out = {}
+  for _, it in ipairs(db.tracks) do
+    local hay = ((it.title or "") .. " " .. (it.name or "")):lower()
+    if hay:find(query, 1, true) then out[#out+1] = it end
+  end
+  if #out > 0 or #query < 3 then return out end
+
+  -- 2) Fallback: subsequence fuzzy match (catches typos/abbreviations
+  --    substring search misses), only once the query is long enough
+  --    that "matches almost everything" is no longer a real risk.
   for _, it in ipairs(db.tracks) do
     local hay = ((it.title or "") .. " " .. (it.name or "")):lower()
     local qi = 1

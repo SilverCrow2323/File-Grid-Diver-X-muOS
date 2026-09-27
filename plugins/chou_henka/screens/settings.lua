@@ -7,6 +7,7 @@ local CFG = require("plugins.chou_henka.core.config")
 local PB = require("plugins.chou_henka.core.playback")
 local LIB = require("plugins.chou_henka.core.library")
 local Notify = require("ui.notify")
+local Icons = require("plugins.chou_henka.ui.icons")
 local M = {}
 local W, H = 640, 480
 local TABS = {
@@ -19,8 +20,13 @@ local TABS = {
 }
 local cur_tab, sel, scroll, t = 1, 1, 0, 0
 local function col(c,a) love.graphics.setColor(c[1],c[2],c[3],a or 1) end
-local function tog(label,hint,sec,key,default,on_change)
-  return { kind="toggle", label=label, hint=hint,
+-- NOTE: `icon` is an optional key from plugins.chou_henka.ui.icons (e.g.
+-- "star", "clock", "gear"). It used to be silently mis-passed as a bogus
+-- extra argument to on_change/danger in a few rows below (crash-on-toggle
+-- for anything landing in `on_change`); it's now a real, dedicated slot
+-- that the row renderer in M.draw() actually uses.
+local function tog(label,hint,sec,key,default,icon,on_change)
+  return { kind="toggle", label=label, hint=hint, icon=icon,
     get=function() local v=CFG.get(sec,key); if v==nil then return default end; return v==true end,
     toggle=function() local v=CFG.get(sec,key); if v==nil then v=default end
       CFG.set(sec,key,not v); CFG.save()
@@ -37,8 +43,8 @@ local function enu(label,hint,sec,key,options,default,on_change)
       if on_change then on_change(options[i]) end
     end }
 end
-local function sld(label,hint,sec,key,minv,maxv,step,fmt,default)
-  return { kind="slider", label=label, hint=hint, fmt=fmt,
+local function sld(label,hint,sec,key,minv,maxv,step,fmt,default,icon)
+  return { kind="slider", label=label, hint=hint, fmt=fmt, icon=icon,
     get=function() local v=CFG.get(sec,key); if v==nil then return default end; return v end,
     cycle=function(dir)
       local v=CFG.get(sec,key); if v==nil then v=default end
@@ -46,8 +52,8 @@ local function sld(label,hint,sec,key,minv,maxv,step,fmt,default)
       CFG.set(sec,key,v); CFG.save()
     end }
 end
-local function act(label,hint,fn,danger)
-  return { kind="action", label=label, hint=hint, act=fn, danger=danger }
+local function act(label,hint,fn,danger,icon)
+  return { kind="action", label=label, hint=hint, act=fn, danger=danger, icon=icon }
 end
 local function inf(label,get_fn) return { kind="info", label=label, get=get_fn } end
 local function build_rows()
@@ -184,7 +190,11 @@ local function build_rows()
     end, true, "gear")
   elseif tab == "about" then
     r[#r+1] = { kind="header", label="CHOU HENKA MC" }
-    r[#r+1] = inf("Version",function() return "v2.1.0-build2" end)
+    r[#r+1] = inf("Version",function()
+      -- single source of truth: plugins/chou_henka/plugin.lua
+      local ok, P = pcall(require, "plugins.chou_henka.plugin")
+      return "v" .. ((ok and P.version) or "2.1.0")
+    end)
     r[#r+1] = inf("Author",function() return "sirpips / SPDW" end)
     r[#r+1] = inf("Engine",function() return "mpv + LÖVE 11.5" end)
     r[#r+1] = { kind="header", label="STATS" }
@@ -326,13 +336,19 @@ function M.draw()
           love.graphics.rectangle("line", 24.5, y + 0.5, W - 49, row_h - 5, 3, 3)
           love.graphics.setLineWidth(1)
         end
+        local label_x = 36
+        if rr.icon then
+          Icons.draw(rr.icon, 28, y + 13, 8,
+            focused and th.accent_hi or th.text_dim, focused and 1 or 0.75)
+          label_x = 50
+        end
         love.graphics.setFont(A.font(A.FONT_BODY_BOLD, 12))
         col(focused and {1,1,1} or th.text, 1)
-        love.graphics.print(rr.label or "?", 36, y + 6)
+        love.graphics.print(rr.label or "?", label_x, y + 6)
         if rr.hint then
           love.graphics.setFont(A.font(A.FONT_BODY, 9))
           col(th.text_dim, 0.75)
-          love.graphics.print(rr.hint, 36, y + 22)
+          love.graphics.print(rr.hint, label_x, y + 22)
         end
         local vtxt, vc
         if rr.kind == "toggle" then
