@@ -63,4 +63,3 @@ jobs:
           luarocks install lua-cjson
 
       - name: Run tests with native modules available
-        run: busted tests/
