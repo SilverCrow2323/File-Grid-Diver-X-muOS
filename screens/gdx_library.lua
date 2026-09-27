@@ -752,64 +752,6 @@ local function draw_toc_overlay()
   end
 end
 
-local function draw_toc_overlay()
-  if not toc_open then return end
-  -- Dim
-  love.graphics.setColor(0, 0, 0, 0.80)
-  love.graphics.rectangle("fill", 0, 0, W, H)
-
-  local x = 40
-  local y = 40
-  local w = W - 80
-  local h = H - 80
-  col({0.030, 0.020, 0.045}, 0.98)
-  love.graphics.rectangle("fill", x, y, w, h, 5, 5)
-  col(acc, 0.9)
-  love.graphics.setLineWidth(1.6)
-  love.graphics.rectangle("line", x + 0.5, y + 0.5, w - 1, h - 1, 5, 5)
-  love.graphics.setLineWidth(1)
-  D.corner_ticks(x + 8, y + 8, w - 16, h - 16, 12, acc, 0.9)
-
-  love.graphics.setFont(A.font(A.FONT_TITLE, 16))
-  col(acc, 1)
-  love.graphics.print("TABLE OF CONTENTS", x + 20, y + 14)
-
-  col(acc, 0.3)
-  love.graphics.rectangle("fill", x + 20, y + 36, w - 40, 1)
-
-  love.graphics.setFont(A.font(A.FONT_BODY, 12))
-  local row_h = 22
-  local vis = math.floor((h - 60) / row_h)
-  local first = math.max(1, toc_sel - vis + 3)
-
-  for i = first, math.min(#epub_toc, first + vis - 1) do
-    local item = epub_toc[i]
-    local ry = y + 46 + (i - first) * row_h
-    local focused = (i == toc_sel)
-    if focused then
-      col(acc, 0.20)
-      love.graphics.rectangle("fill", x + 14, ry - 2, w - 28, row_h - 2, 3, 3)
-      col(acc, 0.9)
-      love.graphics.rectangle("line", x + 14.5, ry - 1.5, w - 29, row_h - 3, 3, 3)
-    end
-    col(focused and {1, 1, 1} or State.theme.text, 1)
-    local title = item.title or "?"
-    if #title > 50 then title = title:sub(1, 49) .. "." end
-    love.graphics.print(title, x + 24, ry + 2)
-  end
-
-  -- Scrollbar
-  if #epub_toc > vis then
-    local track_h = h - 60
-    local thumb_h = math.max(20, track_h * (vis / #epub_toc))
-    local max_s = math.max(1, #epub_toc - vis)
-    local start = math.max(0, toc_sel - vis + 2)
-    local thumb_y = y + 46 + (track_h - thumb_h) * (start / max_s)
-    col(acc, 0.6)
-    love.graphics.rectangle("fill", x + w - 10, thumb_y, 3, thumb_h, 1, 1)
-  end
-end
-
 function S.draw()
   D.bg()
   col(acc, 0.06)

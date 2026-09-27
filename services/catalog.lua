@@ -153,15 +153,13 @@ end
 -- Should we auto-refresh? True if cache is missing or older than 24h
 function M.should_auto_refresh()
   local f = io.open(M.CACHE_FILE, "r")
-  if not f then return true end  -- never fetched
-  local mtime = f:seek("end")    -- dummy to keep handle valid
+  if not f then return true end
   f:close()
-  -- Use shell stat to get mtime reliably
-  local out = require("core.sh").read("stat -c %Y " .. require("core.sh").shq(M.CACHE_FILE) .. " 2>/dev/null")
-  local mtime_num = tonumber(out or "0") or 0
-  local now = os.time()
-  if now - mtime_num > 24 * 3600 then return true end
-  return false
+  local sh = require("core.sh")
+  local out = sh.read("stat -c %Y " .. sh.shq(M.CACHE_FILE) .. " 2>/dev/null")
+  local mtime = tonumber(out or "0") or 0
+  if mtime == 0 then return true end
+  return (os.time() - mtime) > 24 * 3600
 end
 
 
@@ -185,10 +183,8 @@ end
 -- per chiarezza di log.
 function M.refresh_on_boot()
   if not M.should_refresh() then
-    print("[catalog] auto-refresh disabilitato dall'utente")
-    return
+      return
   end
-  print("[catalog] refresh on boot -- avvio in background")
   return M.refresh_async()
 end
 
@@ -231,9 +227,7 @@ function M.poll_update_result(local_ver)
     if ok then
       N.show("info", "Aggiornamento disponibile: " .. remote, 4.5)
     end
-    print("[catalog] update available: " .. remote .. " (local " .. local_ver .. ")")
   else
-    print("[catalog] app up to date (" .. (local_ver or "?") .. ")")
   end
 end
 

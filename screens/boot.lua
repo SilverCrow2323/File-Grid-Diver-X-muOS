@@ -100,6 +100,16 @@ local function draw_folder(cx, cy, s, col, alpha)
 end
 
 local function draw_icon_image(cx, cy, target_size, alpha)
+  local img = A.image("assets/images/fgd_icon.png")
+  if img then
+    local iw, ih = img:getDimensions()
+    local sc = target_size / math.max(iw, ih)
+    local dw, dh = iw * sc, ih * sc
+    love.graphics.setColor(1, 1, 1, alpha or 1)
+    love.graphics.draw(img, cx - dw / 2, cy - dh / 2, 0, sc, sc)
+    love.graphics.setColor(1, 1, 1, 1)
+    return
+  end
   local s = target_size * 0.36
   draw_folder(cx, cy, s, {0.94, 0.66, 0.35}, alpha)
   love.graphics.setColor(0.48, 0.80, 0.90, alpha)

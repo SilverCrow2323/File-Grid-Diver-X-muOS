@@ -627,7 +627,7 @@ local CL = {
   sel = 1,
   items = {
     { key = "trash",     label = "Trash contents",     path = "data/trash",     btn = "WIPE" },
-    { key = "logs",      label = "Application logs",   path = "data/logs",      btn = "WIPE" },
+    { key = "logs",      label = "Applytion logs",   path = "data/logs",      btn = "WIPE" },
     { key = "downloads", label = "Downloaded files",   path = "data/downloads", btn = "WIPE" },
     { key = "tmp",       label = "Temp working files", path = "/tmp",           btn = "WIPE" },
     { key = "snapshots", label = "System snapshots",   path = "data/snapshots", btn = "WIPE" },

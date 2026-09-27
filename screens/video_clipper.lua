@@ -47,7 +47,6 @@ end
 
 local export_job = nil  -- { script=, done=, out=, t=0, target= }
 
-local export_job = nil  -- { script=, done=, out=, t=0, target= }
 
 local function export_clip()
   if not have_ffmpeg() then

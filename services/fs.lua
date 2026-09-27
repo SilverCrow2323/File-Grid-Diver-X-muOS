@@ -51,7 +51,7 @@ local function list_via_ls(path)
         else
           local is_dir  = perm:sub(1, 1) == "d"
           local is_link = perm:sub(1, 1) == "l"
-          local mtime = os.time()  -- ls doesn't give epoch; use now
+          local mtime = 0  -- unknown; caller must treat 0 as unknown
           out[#out + 1] = {
             path    = path:gsub("/$", "") .. "/" .. name,
             name    = name,

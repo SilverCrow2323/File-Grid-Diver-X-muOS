@@ -1,5 +1,6 @@
 -- screens/mainmenu.lua -- router con lazy loading robusto.
--- Carica le view on-demand con pcall: se una fallisce, le altre funzionano.
+-- Loads le view on-demand con pcall: se una fallisce, le altre funzionano.
+local LOG = _G.LOG or require("core.log")
 local Store = require("core.settings_store")
 
 -- View base (senza finalbout: quella si sblocca)
@@ -13,7 +14,7 @@ local function load_view(key)
   local path = "screens.mainmenu_" .. key
   local ok, mod = pcall(require, path)
   if not ok or type(mod) ~= "table" then
-    print("[mainmenu] load FAIL '" .. key .. "': " .. tostring(mod))
+    LOG.info("[mainmenu] load FAIL '" .. key .. "': " .. tostring(mod))
     _cache[key] = false
     return nil
   end

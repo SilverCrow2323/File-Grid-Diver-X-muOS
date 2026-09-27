@@ -54,6 +54,18 @@ local TITLES = {
   grid_dev = "GRID-DEV",
   storage = "STORAGE",
   help = "GUIDE",
+  gdx_library = "GD-X LIBRARY",
+  archive_rt = "ARCHIVE RT",
+  comic_reader = "COMIC READER",
+  web_browser = "WEB VIEW",
+  net_sphere = "NET-SPHERE READER",
+  office_rt = "OFFICE RT",
+  video_clipper = "VIDEO CLIPPER",
+  save_backup = "SAVE BACKUP",
+  screenshot_gallery = "SCREENSHOT GALLERY",
+  image_resizer = "IMAGE RESIZER",
+  font_preview = "FONT PREVIEW",
+  hex_viewer = "HEX VIEWER",
 }
 
 -- ===== telemetry =====

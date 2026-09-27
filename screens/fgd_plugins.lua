@@ -5,6 +5,7 @@
 --   ACTIONS: power switch, install/reinstall/uninstall, log/history
 -- Each plugin has a stable identifier code (FGD-XXXX, hash of id).
 
+local LOG = _G.LOG or require("core.log")
 local A       = require("core.assets")
 local State   = require("core.state")
 local Input   = require("core.input_map")
@@ -31,7 +32,7 @@ local function log_err(where, err)
   if f then
     f:write(os.date("%Y-%m-%d %H:%M:%S ") .. msg .. "\n"); f:close()
   end
-  print(msg)
+  LOG.info(msg)
 end
 
 -- Palette

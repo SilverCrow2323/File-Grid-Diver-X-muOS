@@ -103,20 +103,20 @@ end
 -- ============================================================
 local TABS = {
   { id="perf", label="PERFORMANCE", accent=AMB, rows={
-    enu("Frame rate cap", "limite FPS",
+    enu("Frame rate cap", "FPS limit",
       "dev", "fps_cap", {"vsync", "30", "60", "120", "unlimited"}, "vsync"),
-    num("Particle density", "densita' particelle", "dev", "particle_density",
+    num("Particle density", "particle density", "dev", "particle_density",
       0, 200, 10, function(v) return v .. "%" end, 100),
-    tog("CRT scanlines", "linee CRT sui pannelli", "dev", "crt_scanlines", true),
-    tog("Vignette", "oscuramento bordi", "dev", "vignette", true),
-    tog("Smooth motion", "animazioni fluide", "dev", "smooth", true),
+    tog("CRT scanlines", "CRT scanlines on panels", "dev", "crt_scanlines", true),
+    tog("Vignette", "edge vignette", "dev", "vignette", true),
+    tog("Smooth motion", "smooth animations", "dev", "smooth", true),
   }},
 
   { id="dbg", label="DEBUG", accent=GRN, rows={
-    tog("Input debug overlay", "overlay F3 input", "dev", "dbg_input", false),
-    tog("Screen debug overlay", "overlay nome schermata", "dev", "dbg_screen", false),
-    tog("Verbose runtime log", "log dettagliato", "dev", "verbose", false),
-    act("Save runtime snapshot", "scrive data/snapshots/*.txt",
+    tog("Input debug overlay", "F3 input overlay", "dev", "dbg_input", false),
+    tog("Screen debug overlay", "screen name overlay", "dev", "dbg_screen", false),
+    tog("Verbose runtime log", "verbose runtime log", "dev", "verbose", false),
+    act("Save runtime snapshot", "writes data/snapshots/*.txt",
       function()
         os.execute("mkdir -p data/snapshots")
         local ts = os.date("%Y%m%d_%H%M%S")
@@ -133,19 +133,19 @@ local TABS = {
   }},
 
   { id="sys", label="BEHAVIOR", accent=PUR, rows={
-    num("Header thickness", "altezza barra superiore",
+    num("Header thickness", "top bar height",
       "ui", "header_h", 34, 72, 4,
       function(v) return v .. " px" end, 48),
-    num("Footer thickness", "altezza barra inferiore",
+    num("Footer thickness", "bottom bar height",
       "ui", "footer_h", 28, 64, 4,
       function(v) return v .. " px" end, 40),
-    tog("Neon header logo", "logo appeso", "ui", "header_logo", true),
-    enu("Boot animation", "animazione avvio",
+    tog("Neon header logo", "hanging logo", "ui", "header_logo", true),
+    enu("Boot animation", "boot animation",
       "dev", "boot_anim", {"on", "short", "off"}, "on"),
-    tog("Confirm on delete", "chiedi conferma delete", "dev", "confirm_del", true),
-    tog("Confirm on exit", "chiedi conferma uscita", "dev", "confirm_exit", false),
-    tog("Trash on delete", "cestino invece di hard delete", "dev", "use_trash", true),
-    tog("Auto-refresh grid", "refresh automatico griglia", "dev", "auto_refresh", true),
+    tog("Confirm on delete", "confirm on delete", "dev", "confirm_del", true),
+    tog("Confirm on exit", "confirm on exit", "dev", "confirm_exit", false),
+    tog("Trash on delete", "trash instead of hard delete", "dev", "use_trash", true),
+    tog("Auto-refresh grid", "auto-refresh grid", "dev", "auto_refresh", true),
   }},
 
   { id="net", label="NETWORK", accent=ORG, rows={
@@ -155,32 +155,32 @@ local TABS = {
     inf("User agent", function()
       return Store.get("dev", "user_agent") or "FileGDX/1.0"
     end),
-    num("Timeout", "timeout download", "dev", "timeout", 10, 600, 15,
+    num("Timeout", "download timeout", "dev", "timeout", 10, 600, 15,
       function(v) return v .. "s" end, 60),
-    tog("Show bytes", "mostra velocita' in bytes", "dev", "show_bytes", false),
+    tog("Show bytes", "show speed in bytes", "dev", "show_bytes", false),
   }},
 
   { id="maint", label="MAINTENANCE", accent=RED, rows={
-    tog("Persist dev unlock", "sblocco persistente tra sessioni",
+    tog("Persist dev unlock", "persistent unlock between sessions",
       "dev", "persist_unlock", false,
       function(v)
         if v then
-          Notify.show("success", "GRiD-Dev persistente attivo")
+          Notify.show("success", "GRiD-Dev persistence enabled")
         else
-          Notify.show("warning", "GRiD-Dev tornera' locked al riavvio")
+          Notify.show("warning", "GRiD-Dev will be locked on next boot")
         end
       end),
-    act("Clear all snapshots", "elimina data/snapshots/*",
+    act("Clear all snapshots", "delete data/snapshots/*",
       function()
         os.execute("rm -f data/snapshots/*.txt data/snapshots/*.log 2>/dev/null")
         Notify.show("warning", "snapshots cleared")
       end, true),
-    act("Clear download cache", "elimina data/downloads/*",
+    act("Clear download cache", "delete data/downloads/*",
       function()
         os.execute("rm -f data/downloads/* 2>/dev/null")
         Notify.show("warning", "download cache cleared")
       end, true),
-    act("Reset dev settings", "ripristina i valori di default di GRiD-Dev",
+    act("Reset dev settings", "restore GRiD-Dev defaults",
       function()
         Modal.show("Reset dev settings",
           "Cancellare tutte le impostazioni dev e ripristinare i default?",
@@ -193,7 +193,7 @@ local TABS = {
               Notify.show("warning", "dev settings reset")
             end })
       end, true),
-    act("Reset GRiD-Dev unlock", "blocca il menu fino al prossimo Konami",
+    act("Reset GRiD-Dev unlock", "lock the menu until next Konami",
       function()
         Modal.show("Reset unlock",
           "Bloccare GRiD-Dev? Dovrai reinserire il Konami code.",
@@ -211,14 +211,14 @@ local TABS = {
   { id="goku", label="GOKU SSJ4", accent=ORG, rows=function()
     local r = {}
     r[#r+1] = { kind = "mascot_preview", label = "Mascot preview" }
-    r[#r+1] = tog("Show mascot", "mostra la mascotte SSJ4", "goku", "show_mascot", true)
-    r[#r+1] = enu("Sprite size", "dimensione sprite", "goku", "size",
+    r[#r+1] = tog("Show mascot", "show SSJ4 mascot", "goku", "show_mascot", true)
+    r[#r+1] = enu("Sprite size", "sprite size", "goku", "size",
       {"small", "medium", "large", "huge"}, "medium")
-    r[#r+1] = num("Float amplitude", "ampiezza oscillazione", "goku", "amp",
+    r[#r+1] = num("Float amplitude", "float amplitude", "goku", "amp",
       0, 30, 2, function(v) return v .. " px" end, 14)
-    r[#r+1] = enu("Float speed", "velocita' oscillazione", "goku", "speed",
+    r[#r+1] = enu("Float speed", "float speed", "goku", "speed",
       {"very_slow", "slow", "normal", "fast", "wild"}, "normal")
-    r[#r+1] = tog("Ground shadow", "ombra a terra", "goku", "shadow", true)
+    r[#r+1] = tog("Ground shadow", "ground shadow", "goku", "shadow", true)
     return r
   end },
 }

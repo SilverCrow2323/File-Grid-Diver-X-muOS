@@ -62,7 +62,7 @@ end
 
 local SCAN_TARGETS = {
   { key="trash",     label="Trash",            path="data/trash",        hint="files moved to the app trash" },
-  { key="logs",      label="Application logs", path="data/logs",         hint="per-session log files" },
+  { key="logs",      label="Applytion logs", path="data/logs",         hint="per-session log files" },
   { key="logs_desk", label="Desktop logs",     path=".desktopbase/logs", hint="development session logs" },
   { key="downloads", label="Downloads",        path="data/downloads",    hint="files fetched by the downloader" },
   { key="snapshots", label="Snapshots",        path="data/snapshots",    hint="diagnostic snapshots saved" },

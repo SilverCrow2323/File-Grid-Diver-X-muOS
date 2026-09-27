@@ -133,36 +133,6 @@ local function draw_bg()
   end
 end
 
--- Logo Final Bout in alto
-local function draw_logo()
-  local y = Frame.TOP_H + 14
-  local cx = W/2
-  local pulse = 0.85 + 0.15 * math.sin(t * 3)
-  D.glow(cx, y + 20, 180, ORO, 0.5 * pulse)
-
-  -- Prova immagine logo
-  local logo = A.image("assets/images/fblogo.png")
-  if logo then
-    local iw, ih = logo:getDimensions()
-    local target_h = 54
-    local sc = target_h / ih
-    if iw * sc > 380 then sc = 380 / iw end
-    local dw = iw * sc
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.draw(logo, cx - dw / 2, y, 0, sc, sc)
-  else
-    -- fallback testo
-    love.graphics.setFont(A.font(A.FONT_TITLE, 34))
-    col({0, 0, 0}, 0.8)
-    love.graphics.printf("FINAL BOUT", 2, y + 2, W, "center")
-    col(ORO, 1)
-    love.graphics.printf("FINAL BOUT", 0, y, W, "center")
-  end
-  love.graphics.setFont(A.font(A.FONT_MONO, 10))
-  col(ARA, 0.85)
-  love.graphics.printf("~ FILE MANAGER EDITION ~", 0, y + 60, W, "center")
-end
-
 -- Icona dei 4 riquadri
 local function draw_icon(kind, cx, cy, r, c, a)
   col(c, a or 1)

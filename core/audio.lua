@@ -4,6 +4,32 @@
 local M = {}
 
 local cache     = {}
+local cache_lru = {}   -- least recently used at front
+local CACHE_MAX = 64   -- max sources kept alive
+
+local function cache_touch(name)
+  for i, n in ipairs(cache_lru) do
+    if n == name then table.remove(cache_lru, i); break end
+  end
+  table.insert(cache_lru, name)
+end
+
+local function cache_put(name, src)
+  cache[name] = src
+  cache_touch(name)
+  while #cache_lru > CACHE_MAX do
+    local old = table.remove(cache_lru, 1)
+    local s = cache[old]
+    if s and s.release then pcall(function() s:release() end) end
+    cache[old] = nil
+  end
+end
+
+local function cache_get(name)
+  local s = cache[name]
+  if s then cache_touch(name) end
+  return s
+end
 local enabled   = true
 local volume    = 0.55
 
@@ -39,9 +65,8 @@ function M.load()
   for _, name in ipairs(NAMES) do
     local src, ext, path = try_load(name)
     if src then
-      cache[name] = src
+      cache_put(name, src)
       loaded = loaded + 1
-      print("[SFX] loaded: " .. name .. " (" .. ext .. ")")
     else
       missing[#missing + 1] = name
     end
@@ -61,9 +86,8 @@ function M.play(name, vol)
   if not base then
     local src, ext = try_load(name)
     if src then
-      cache[name] = src
+      cache_put(name, src)
       base = src
-      print("[SFX] loaded on demand: " .. name .. " (" .. tostring(ext) .. ")")
     elseif name ~= orig_name then
       -- fallback: il nome FB non esiste, prova il nome originale
       base = cache[orig_name]

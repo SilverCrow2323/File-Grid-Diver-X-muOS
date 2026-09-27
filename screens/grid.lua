@@ -555,11 +555,7 @@ local function open_file()
     return
   end
   -- Font Preview
-  if ext == "ttf" or ext == "otf" or ext == "woff" or ext == "woff2" then
-    State.font_preview_path = e.path
-    State.go("font_preview")
-    return
-  end
+
   if kind == "image" then
     State.selected_path, State.selected_entry = e.path, e
     State.go("image_viewer")
@@ -899,49 +895,6 @@ local function panel_activate()
   if r and r.act then r.act() end
 end
 
-local function panel_move(delta)
-  local rows = panel_rows()
-  local n = #rows
-  local i = S.panel_sel
-  local t = 0
-  repeat
-    i = i + delta
-    if i < 1 then i = n end
-    if i > n then i = 1 end
-    t = t + 1
-  until (rows[i].kind ~= "sep") or t > n
-  S.panel_sel = i
-end
-
-local function panel_jump_group(dir)
-  local rows = panel_rows()
-  local cur = rows[S.panel_sel]
-  if not cur then return end
-  local cur_g = cur.group or 1
-  local target = cur_g + dir
-  local min_g, max_g = 99, 0
-  for _, r in ipairs(rows) do
-    if r.group then
-      if r.group < min_g then min_g = r.group end
-      if r.group > max_g then max_g = r.group end
-    end
-  end
-  if target < min_g then target = max_g end
-  if target > max_g then target = min_g end
-  for i, r in ipairs(rows) do
-    if r.group == target and r.kind ~= "sep" then S.panel_sel = i; return end
-  end
-end
-
-local function panel_activate()
-  local rows = panel_rows()
-  local r = rows[S.panel_sel]
-  if r and r.act then r.act() end
-end
-
--- ============================================================
---  Context menu
--- ============================================================
 local function open_context_menu()
   local p = ap()
   local e = p.filtered[p.sel]
@@ -1151,10 +1104,20 @@ function S.update(dt)
   local target = (S.mode == "panel") and 1 or 0
   S.side_open = S.side_open + (target - S.side_open) * math.min(1, dt * 10)
 
-  -- Update preview if cursor moved
+  -- Preview: debounce load so rapid scrolling does not freeze on
+  -- large images. Load only after 120 ms of cursor stillness.
   local p = ap()
   local e = p.filtered[p.sel]
-  if e and not e.is_parent then load_preview(e.path) else clear_preview() end
+  local want = (e and not e.is_parent) and e.path or nil
+  if want ~= S.preview_path then
+    S._preview_debounce = (S._preview_debounce or 0) + dt
+    if S._preview_debounce >= 0.12 then
+      if want then load_preview(want) else clear_preview() end
+      S._preview_debounce = 0
+    end
+  else
+    S._preview_debounce = 0
+  end
 end
 
 -- ============================================================

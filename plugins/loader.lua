@@ -2,6 +2,7 @@
 -- Uses ui/perm_dialog for the consent screen. Each plugin gets:
 --   man.screen        -> its real screen (or the perm dialog if missing)
 --   man.manage_screen -> always the perm dialog (reopen from plugins list)
+local LOG = _G.LOG or require("core.log")
 local API = require("plugins.api")
 local PermDialog = require("ui.perm_dialog")
 
@@ -45,7 +46,7 @@ function M.scan()
   for _, pkg in ipairs(dirs) do
     local man, err = read_manifest(pkg)
     if not man then
-      print("[loader] skip " .. pkg .. ": " .. tostring(err))
+      LOG.info("[loader] skip " .. pkg .. ": " .. tostring(err))
     else
       man.pkg         = pkg
       man.permissions = man.permissions or {}
@@ -62,7 +63,7 @@ function M.scan()
       if #man.missing > 0 and not API.is_decided(pkg) then
         man.screen = PermDialog.make(pkg, man, man.permissions)
         man.needs_perm = true
-        print("[loader] " .. pkg .. " needs permission: " ..
+        LOG.info("[loader] " .. pkg .. " needs permission: " ..
           table.concat(man.missing, ", "))
       else
         -- Load with only the granted permissions. Denied permissions
@@ -71,12 +72,12 @@ function M.scan()
         local entry_path = "plugins/" .. pkg .. "/" .. man.entry .. ".lua"
         local screen, lerr = API.load_plugin(pkg, entry_path, granted)
         if not screen then
-          print("[loader] load FAIL " .. pkg .. ": " .. tostring(lerr))
+          LOG.info("[loader] load FAIL " .. pkg .. ": " .. tostring(lerr))
           man.screen = nil
         else
           man.screen = screen
           man.needs_perm = false
-          print("[loader] OK: " .. pkg .. " -> " .. (man.key or pkg))
+          LOG.info("[loader] OK: " .. pkg .. " -> " .. (man.key or pkg))
         end
       end
 

@@ -362,13 +362,9 @@ love .
 
 ### Optional native extensions
 
-Two pure-Lua libraries are vendored:
-
-- `vendor/lume.lua` — table and string utilities.
-- `vendor/inspect.lua` — pretty-printer for tables.
-
-They are optional. Nothing in the file manager requires them; they
-exist for diagnostics and future features.
+No pure-Lua libraries are vendored. The codebase relies on the
+standard LuaJIT stdlib and, if present, the native modules
+(`lfs`, `cjson`).
 
 ### Compiling `lfs` and `cjson` for muOS (aarch64)
 
@@ -476,21 +472,18 @@ And two runtime logs:
 
 ### Planned
 
-- [ ] Plugin loader (`data/plugins/*.lua`)
-- [ ] Save file sync between SD1 and SD2
 - [ ] FAT32 filename sanitizer
-- [ ] Duplicate finder
-- [ ] Disk usage treemap
 - [ ] Custom keybinding editor
+- [ ] Theme schema validator
+- [ ] Automated screen tests
 
 ### Explicitly out of scope
 
-- Audio or video playback (muOS ships `mpv`; use it).
 - Embedded terminals (SSH from a PC).
-- HTTP / SFTP / FTP servers (nobody uses them on a handheld).
+- HTTP / SFTP / FTP servers.
 - Cloud sync.
 - Hex *editing* (read-only hex view only).
-- ROM auto-organizers (offer a guided batch rename instead).
+- ROM auto-organizers.
 
 ---
 

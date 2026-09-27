@@ -25,11 +25,15 @@
 -- ------------------------------------------------------------
 require("core.native")
 
+local LOG = require("core.log")   -- structured logging
+_G.LOG = LOG
+
 local State = require("core.state")
 local Input = require("core.input_map")
 local SFX   = require("core.audio")
 local UnlockOverlay = require("ui.unlock_overlay")   -- FGDX_UNLOCK_OVERLAY
 local Transition    = require("ui.transition")
+local ErrorOverlay = require("ui.error_overlay")
 
 -- ------------------------------------------------------------
 -- 1. Screen registry
@@ -128,31 +132,11 @@ local LOG_MAX_KB    = 512
 local log_size_check = 0
 
 local function log(level, msg)
-  local line = string.format("[%s] %s", level, tostring(msg))
-  print(line)
-  local f = io.open(LOG_PATH, "a")
-  if not f then return end
-  f:write(os.date("%Y-%m-%d %H:%M:%S ") .. line .. "\n")
-  f:close()
-
-  -- Rotate: trim to half when file exceeds LOG_MAX_KB
-  log_size_check = log_size_check + 1
-  if log_size_check > 100 then
-    log_size_check = 0
-    local rf = io.open(LOG_PATH, "r")
-    if rf then
-      local sz = rf:seek("end")
-      rf:close()
-      if sz > LOG_MAX_KB * 1024 then
-        local sh = require("core.sh")
-        os.execute("tail -c " .. (LOG_MAX_KB * 512) .. " " ..
-          sh.shq(LOG_PATH) .. " > " ..
-          sh.shq(LOG_PATH .. ".tmp") .. " 2>/dev/null && " ..
-          "mv " .. sh.shq(LOG_PATH .. ".tmp") .. " " ..
-          sh.shq(LOG_PATH))
-      end
-    end
-  end
+  local lv = level:lower()
+  if     lv == "err" or lv == "error" then LOG.error(msg)
+  elseif lv == "warn"                 then LOG.warn(msg)
+  elseif lv == "debug"                then LOG.debug(msg)
+  else                                     LOG.info(msg) end
 end
 
 local function report(where, err)
@@ -171,7 +155,13 @@ local function call_screen(method, ...)
   local fn = current[method]
   if type(fn) ~= "function" then return end
   local ok, err = pcall(fn, ...)
-  if not ok then report(method, err) end
+  if not ok then
+    report(method, err)
+    -- Avoid recursion: never re-enter the overlay from its own draw/update.
+    if current ~= ErrorOverlay then
+      ErrorOverlay.show(err, method, current_name)
+    end
+  end
 end
 
 -- ------------------------------------------------------------
@@ -206,16 +196,15 @@ end
 -- ------------------------------------------------------------
 -- 6. State.go / State.back (public API)
 -- ------------------------------------------------------------
+local reset_fb_buffers
+
 function State.go(name, opts)
   opts = opts or {}
 
-  -- FGDX_RESET_FB_BUF_ON_ENTER: reset buffer codici FB quando entri in mainmenu
+  -- Reset FB buffers when entering mainmenu
   if name == "mainmenu" then
     State.fb_audio_awaiting_y = false
-    FB_VIEW_BUF = {}
-    FB_BUF = {}
-    FB_AUDIO_X_BUF = 0
-    FB_AUDIO_Y_BUF = 0
+    if reset_fb_buffers then reset_fb_buffers() end
   end
 
   -- Refresh plugin screens (in case of rescan)
@@ -361,6 +350,13 @@ local FB_AUDIO_Y_BUF = 0
 local FB_SEQ = { "dpright", "dpleft", "dpdown", "dpup",
                  "dpright", "dpleft", "dpdown", "dpup" }
 local FB_BUF = {}
+
+reset_fb_buffers = function()
+  FB_VIEW_BUF = {}
+  FB_BUF = {}
+  FB_AUDIO_X_BUF = 0
+  FB_AUDIO_Y_BUF = 0
+end
 
 -- FGDX_FB_VIEW: codice 1
 local function fb_view_check(name)
@@ -758,6 +754,12 @@ end
 -- 19. love.update
 -- ------------------------------------------------------------
 function love.update(dt)
+  ErrorOverlay.update(dt)
+  if ErrorOverlay.is_active() then
+    -- Freeze the app while the recovery overlay is up.
+    tick_holds()
+    return
+  end
   UnlockOverlay.update(dt)                             -- FGDX_UNLOCK_OVERLAY
   Transition.update(dt)
   State.t_ui = (State.t_ui or 0) + dt
@@ -860,6 +862,10 @@ function love.draw()
   end
 
   Transition.draw()
+
+  if ErrorOverlay.is_active() then
+    ErrorOverlay.draw()
+  end
 end
 
 function love.focus(f)
@@ -874,6 +880,12 @@ end
 local held_buttons = {}
 
 function love.gamepadpressed(_, name)
+  -- Error overlay has highest priority.
+  if ErrorOverlay.is_active() then
+    ErrorOverlay.pad(name)
+    return
+  end
+
   -- Unlock overlay: any button skips it and is consumed
   if UnlockOverlay.is_active() then                    -- FGDX_UNLOCK_OVERLAY
     if UnlockOverlay.can_skip and UnlockOverlay.can_skip() then
@@ -1070,6 +1082,12 @@ local K2P = {
 }
 
 function love.keypressed(k)
+  -- Error overlay has highest priority.
+  if ErrorOverlay.is_active() then
+    ErrorOverlay.key(k)
+    return
+  end
+
   -- Unlock overlay: any key skips it
   if UnlockOverlay.is_active() then                    -- FGDX_UNLOCK_OVERLAY
     if UnlockOverlay.can_skip and UnlockOverlay.can_skip() then

@@ -145,6 +145,7 @@ function M.move(path)
   local entries = read_index(idx)
   entries[#entries + 1] = { t = ts, orig = path, stored = stored }
   write_index(idx, entries)
+  _size_cache = nil
   return true, stored
 end
 
@@ -231,7 +232,15 @@ function M.purge_index(i)
 end
 
 -- Total footprint across all volumes.
+local _size_cache = nil
+local _size_cache_t = 0
+local SIZE_TTL = 3.0
+
 function M.size()
+  local now = (love and love.timer and love.timer.getTime()) or os.time()
+  if _size_cache and (now - _size_cache_t) < SIZE_TTL then
+    return _size_cache
+  end
   local total = 0
   for _, dir in ipairs(all_trash_dirs()) do
     if sh.exists(dir) then
@@ -244,7 +253,14 @@ function M.size()
       end
     end
   end
+  _size_cache = total
+  _size_cache_t = now
   return total
+end
+
+function M.invalidate_size()
+  _size_cache = nil
+  _size_cache_t = 0
 end
 
 -- Expose for diagnostics.

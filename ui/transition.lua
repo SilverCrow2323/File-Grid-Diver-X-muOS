@@ -1,6 +1,7 @@
 -- ui/transition.lua -- global screen fade + input pulse.
 -- Ogni cambio schermata: fade out (0.12s) -> switch -> fade in (0.14s).
 -- Ogni pressione di navigazione: pulse visivo sottile sul bordo.
+local LOG = _G.LOG or require("core.log")
 local M = {
   active   = false,
   t        = 0,
@@ -39,7 +40,7 @@ function M.update(dt)
         if p and p.fn then
           local ok, err = pcall(p.fn, p.name, p.opts)
           if not ok then
-            print("[transition] switch error: " .. tostring(err))
+            LOG.info("[transition] switch error: " .. tostring(err))
           end
         end
         if #M.queue > 0 then

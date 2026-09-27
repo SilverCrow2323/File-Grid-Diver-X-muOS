@@ -492,41 +492,6 @@ local function build_tools_list()
     end
   end
   -- installed apps on SD cards (DISABLED: mostra solo SPDW)
-  if false then
-  for _, root in ipairs(TOOLS_ROOTS) do
-    if sh.is_dir(root.path) then
-      local h = io.popen("ls -1d " .. sh.shq(root.path) .. "/*/ 2>/dev/null")
-      if h then
-        for line in h:lines() do
-          local name = line:match("([^/]+)/$")
-          if name then
-            local lkey = "local_" .. name:lower():gsub("[^%w]+", "_")
-            if not seen[lkey] then
-              out[#out + 1] = {
-                key          = lkey,
-                name         = name,
-                tagline      = "muOS app · " .. root.label,
-                description  = "Application found on " .. root.label ..
-                  " at " .. root.path .. "/" .. name,
-                version      = "?",
-                category     = "muOS App",
-                icon         = "gear",
-                colour       = {0.55, 0.85, 0.45},
-                source       = "local",
-                installed    = true,
-                local_path   = root.path .. "/" .. name,
-                install_path = root.path .. "/" .. name .. "/mux_launch.sh",
-                sd           = root.label,
-              }
-              seen[lkey] = true
-            end
-          end
-        end
-        h:close()
-      end
-    end
-  end
-    end -- FGDX: chiude if false
   table.sort(out, function(a, b)
     if a.installed ~= b.installed then return a.installed end
     return (a.name or ""):lower() < (b.name or ""):lower()
@@ -1933,7 +1898,7 @@ local function draw_tools_detail()
 
   love.graphics.setFont(A.font(A.FONT_BODY_BOLD, 13))
   col(f1 and {1,1,1} or th.text, 1)
-  love.graphics.print("Application status", X + 16, y_actbox + 8)
+  love.graphics.print("Applytion status", X + 16, y_actbox + 8)
 
   love.graphics.setFont(A.font(A.FONT_BODY, 9))
   col(th.text_dim, 0.85)

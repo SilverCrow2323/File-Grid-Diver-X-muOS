@@ -106,16 +106,16 @@ local TABS = {
   { id="interface", label="INTERFACE", accent=AMB, rows=function()
     return {
       { kind = "header", label = "APPEARANCE" },
-      enu("Font family", "font alternativo",
+      enu("Font family", "alternative font",
         "ui", "font_family",
         {"auto","orbitron","oxanium","mono","default"}, "auto",
         function() require("core.assets").clear_cache() end),
-      sld("Font scale", "dimensione testo globale",
+      sld("Font scale", "global text size",
         "ui", "font_scale", 0.80, 1.80, 0.05,
         function(v) return string.format("%.2fx", v) end, 1.20),
 
       { kind = "header", label = "SOUND" },
-      tog("Sound effects", "SFX di sistema", "sound", "enabled", false,
+      tog("Sound effects", "system SFX", "sound", "enabled", false,
         function(v)
           local ok, SFX = pcall(require, "core.audio")
           if ok then SFX.set_enabled(v) end
@@ -128,7 +128,7 @@ local TABS = {
         end,
         function() return Store.get("sound", "enabled") ~= true end
       ),
-      sld("Sound volume", "volume SFX", "sound", "volume", 0, 100, 5,
+      sld("Sound volume", "SFX volume", "sound", "volume", 0, 100, 5,
         function(v) return string.format("%d%%", v) end, 70,
         function(v)
           local ok, SFX = pcall(require, "core.audio")
@@ -136,12 +136,12 @@ local TABS = {
         end),
 
       { kind = "header", label = "VIEWS" },
-      enu("File manager view", "default del file manager",
+      enu("File manager view", "file manager default",
         "general", "view", {"list","grid","compact","details"}, "list"),
-      enu("Main hub view", "stile del main menu",
+      enu("Main hub view", "main menu style",
         "ui", "mainmenu_view",
         {"console","hud","rez"}, "console"),
-      tog("Dual panel", "due directory affiancate",
+      tog("Dual panel", "two side-by-side directories",
         "general", "dual", false),
     }
   end },
@@ -149,13 +149,13 @@ local TABS = {
   { id="browser", label="BROWSER", accent=CYA, rows=function()
     return {
       { kind = "header", label = "SORTING" },
-      enu("Default sort", "ordine dei file",
+      enu("Default sort", "file sorting",
         "sort", "key", {"name","size","date","type"}, "name"),
-      tog("Folders first", "cartelle prima dei file",
+      tog("Folders first", "folders before files",
         "sort", "folders_first", true),
 
       { kind = "header", label = "VISIBILITY" },
-      tog("Show hidden files", "mostra file .nascosti",
+      tog("Show hidden files", "show hidden files",
         "general", "show_hidden", false),
     }
   end },
@@ -163,18 +163,18 @@ local TABS = {
   { id="header", label="HEADER", accent=BLU, rows=function()
     return {
       { kind = "header", label = "ELEMENTS" },
-      tog("Clock", "orologio nell'header", "ui", "show_clock", true),
-      tog("Wi-Fi signal", "indicatore wifi", "ui", "show_wifi", true),
-      tog("Battery", "livello batteria", "ui", "show_battery", true),
-      tog("Memory", "uso RAM", "ui", "show_mem", true),
+      tog("Clock", "clock in header", "ui", "show_clock", true),
+      tog("Wi-Fi signal", "wifi indicator", "ui", "show_wifi", true),
+      tog("Battery", "battery level", "ui", "show_battery", true),
+      tog("Memory", "RAM usage", "ui", "show_mem", true),
       tog("Download indicator", "pill download", "ui", "show_download", true),
-      tog("Neon header logo", "logo appeso", "ui", "header_logo", true),
+      tog("Neon header logo", "hanging logo", "ui", "header_logo", true),
 
       { kind = "header", label = "SIZING" },
-      sld("Header thickness", "altezza barra superiore",
+      sld("Header thickness", "top bar height",
         "ui", "header_h", 34, 72, 4,
         function(v) return v .. " px" end, 48),
-      sld("Footer thickness", "altezza barra inferiore",
+      sld("Footer thickness", "bottom bar height",
         "ui", "footer_h", 28, 64, 4,
         function(v) return v .. " px" end, 40),
     }
@@ -183,18 +183,18 @@ local TABS = {
   { id="effects", label="EFFECTS", accent=PUR, rows=function()
     return {
       { kind = "header", label = "VISUAL EFFECTS" },
-      tog("Particles & effects", "animazioni e particelle",
+      tog("Particles & effects", "animations and particles",
         "ui", "particles", true),
-      tog("Show FPS", "contatore frame", "ui", "show_fps", false),
+      tog("Show FPS", "frame counter", "ui", "show_fps", false),
     }
   end },
 
   { id="updates", label="UPDATES", accent=YEL, rows=function()
     return {
       { kind = "header", label = "CATALOG" },
-      tog("Auto-update catalog", "scarica catalog.json ad ogni boot",
+      tog("Auto-update catalog", "download catalog.json at every boot",
         "update", "auto_catalog", true),
-      act("Refresh catalog now", "scarica subito catalog.json",
+      act("Refresh catalog now", "download catalog.json now",
         function()
           local ok, Cat = pcall(require, "services.catalog")
           if not ok then Notify.show("error", "catalog service missing"); return end
@@ -216,9 +216,9 @@ local TABS = {
       end),
 
       { kind = "header", label = "APPLICATION" },
-      tog("Check app updates", "notifica nuova versione",
+      tog("Check app updates", "notify new version",
         "update", "auto_app_check", true),
-      act("Check app version", "confronta con remoto",
+      act("Check app version", "compare with remote",
         function()
           local ok, Cat = pcall(require, "services.catalog")
           if not ok then Notify.show("error", "catalog service missing"); return end
@@ -231,7 +231,7 @@ local TABS = {
   { id="system", label="SYSTEM", accent=RED, rows=function()
     local r = {}
     r[#r+1] = { kind = "header", label = "ABOUT" }
-    r[#r+1] = act("About File-GD X", "versione, crediti, licenza",
+    r[#r+1] = act("About File-GD X", "version, credits, license",
       function() State.go("about") end)
     if State.fb_view_used or State.fb_audio_used then
       r[#r+1] = act("On the 'Final Bout'", "the game that left a mark",
@@ -239,9 +239,9 @@ local TABS = {
     end
 
     r[#r+1] = { kind = "header", label = "TOOLS" }
-    r[#r+1] = act("Key guide", "tutti i binding in un posto",
+    r[#r+1] = act("Key guide", "all bindings in one place",
       function() State.go("help") end)
-    r[#r+1] = act("Open log viewer", "log runtime e sessione",
+    r[#r+1] = act("Open log viewer", "runtime and session log",
       function() State.go("log") end)
     if State.dev_unlocked then
       r[#r+1] = {
@@ -252,10 +252,10 @@ local TABS = {
     end
 
     r[#r+1] = { kind = "header", label = "DANGER ZONE" }
-    r[#r+1] = act("Reset all settings", "ripristina i default",
+    r[#r+1] = act("Reset all settings", "restore defaults",
       function()
         Modal.show("Reset all settings",
-          "Ripristinare ogni preferenza al default?",
+          "Restore every preference to default?",
           { accept_label = "RESET", cancel_label = "CANCEL",
             accept_color = RED,
             on_accept = function()
